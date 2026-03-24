@@ -1,0 +1,8 @@
+sounddevice
+numpy
+scipy
+pynput
+pyperclip
+psutil
+faster-whisper
+pyinstaller
