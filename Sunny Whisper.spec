@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+APP_VERSION = "1.0.0"  # ← меняешь только здесь
+
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -48,6 +50,7 @@ app = BUNDLE(
     name='Sunny Whisper.app',
     icon="icon.icns",
     bundle_identifier="com.rostyslavyarosh.sunny-whisper",
+    version=APP_VERSION,
     info_plist={
         "NSMicrophoneUsageDescription": "App needs microphone access for recording audio",
         "NSAppleEventsUsageDescription": "App needs to listen for keyboard shortcuts",
