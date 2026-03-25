@@ -8,13 +8,14 @@ from scipy.io.wavfile import write
 from pynput import keyboard
 from pynput.keyboard import Controller, Key
 import pyperclip
-import signal
-import atexit
+from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject, NSApplicationTerminateReply
+from PyObjCTools import AppHelper
+import threading
 
 # --- Constants and Global Variables ---
 APP_NAME = "Sunny Whisper"
-# HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"
-HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-large-v3"
+HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"
+# HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-large-v3"
 CACHE_DIR = Path.home() / "Library" / "Caches" / APP_NAME
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -24,10 +25,21 @@ FS = 44100
 RECORD_KEYS = [keyboard.Key.shift_r] # Shortcut to start audio capture from microphone
 
 # --- Global Variables ---
+base_dir = None
 recording = []
 is_recording = False
 stream = None
 model = None
+
+class AppDelegate(NSObject):
+    def applicationShouldTerminate_(self, sender):
+        log("applicationShouldTerminate_ called")
+        cleanup()
+        return 1  # NSTerminateNow
+
+    def applicationWillTerminate_(self, notification):
+        log("applicationWillTerminate_ called")
+        cleanup()
 
 # --- Functions ---
 # --- Logging Function ---
@@ -37,6 +49,21 @@ def log(msg):
     print(full_msg)
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(full_msg + "\n")
+
+def detect_base_dir():
+    global base_dir
+    if getattr(sys, "frozen", False):
+        base_dir = sys._MEIPASS
+        log(f"Base dir: {base_dir}")
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        log(f"Base dir: {base_dir}")
+
+def get_base_dir():
+    global base_dir
+    if not base_dir:
+        detect_base_dir()
+    return base_dir
 
 # --- Key and Audio Capture Functions ---
 def callback(indata, frames, time, status):
@@ -114,12 +141,11 @@ def on_release(key):
 
 def load_model():
     global model
+    base_dir = get_base_dir()
     if getattr(sys, "frozen", False):
-        base_dir = sys._MEIPASS
         model_path = os.path.join(base_dir, "model")
         log(f"Running as frozen app. Base dir: {base_dir}, model path: {model_path}")
     else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
         log(f"Running as script. Base dir: {base_dir}")
         log("Downloading model snapshot...")
         model_cache_dir = snapshot_download(repo_id=HF_MODEL_REPO_ID)
@@ -176,41 +202,57 @@ def cleanup():
         try:
             stream.stop()
             stream.close()
+            stream = None
             log("Audio stream closed")
         except Exception as e:
             log(f"Stream close error: {e}")
 
-    if model:
+    if model is not None:
         try:
-            del model
+            model = None
             log("Model released")
         except Exception as e:
             log(f"Model release error: {e}")
 
     log("Cleanup finished")
 
-def handle_exit(signum=None, frame=None):
-    log(f"Exit signal received: {signum}")
-    cleanup()
-    sys.exit(0)
+
+def create_menu_bar():
+    base_dir = get_base_dir()
+    status_bar = NSStatusBar.systemStatusBar()
+    status_item = status_bar.statusItemWithLength_(NSVariableStatusItemLength)
+
+    icon_path = os.path.join(base_dir, "icon-menu-bar.png")
+    icon = NSImage.alloc().initByReferencingFile_(icon_path)
+    icon.setSize_((18, 18))
+
+    status_item.button().setImage_(icon)
+
+    return status_item
+
+def run_event_loop():
+    AppHelper.runEventLoop()
+
 
 def main():
     log("Starting app...")
-    load_model()
+    # Load Whisper model in a background thread to avoid blocking app startup
+    threading.Thread(target=load_model, daemon=True).start()
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
 
-    signal.signal(signal.SIGINT, handle_exit)   # Ctrl+C
-    signal.signal(signal.SIGTERM, handle_exit)  # system terminate
-    atexit.register(cleanup)                    # normal exit
+    # Load Whisper model in a background thread to avoid blocking app startup
+    app = NSApplication.sharedApplication()
 
-    main()
+    delegate = AppDelegate.alloc().init()
+    app.setDelegate_(delegate)
+
+    # Create menu bar icon in macOS status bar
+    status_item = create_menu_bar()
 
     listener = keyboard.Listener(on_press=on_press, on_release=on_release)
     listener.start()
 
-    try:
-        listener.join()
-    except KeyboardInterrupt:
-        handle_exit()
+    main()
+    AppHelper.runEventLoop()

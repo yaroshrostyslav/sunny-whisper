@@ -6,7 +6,10 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('model', 'model')],
+    datas=[
+        ('model', 'model'),
+        ('icon-menu-bar.png', '.'),
+    ],
     hiddenimports=['sounddevice', 'scipy', 'pynput.keyboard._darwin'],
     hookspath=[],
     hooksconfig={},
