@@ -7,7 +7,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('model', 'model'),
+        ('app/model', 'model'),
         ('icons/icon-menu-bar.png', '.'),
     ],
     hiddenimports=['sounddevice', 'scipy', 'pynput.keyboard._darwin'],
