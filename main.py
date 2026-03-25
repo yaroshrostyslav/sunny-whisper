@@ -8,6 +8,8 @@ from scipy.io.wavfile import write
 from pynput import keyboard
 from pynput.keyboard import Controller, Key
 import pyperclip
+import signal
+import atexit
 
 # --- Constants and Global Variables ---
 APP_NAME = "Sunny Whisper"
@@ -163,12 +165,52 @@ def transcribe_audio(audio_file: str) -> str:
 
     return full_text
 
+def cleanup():
+    global stream, model, is_recording
+
+    log("Cleanup started...")
+
+    is_recording = False
+
+    if stream:
+        try:
+            stream.stop()
+            stream.close()
+            log("Audio stream closed")
+        except Exception as e:
+            log(f"Stream close error: {e}")
+
+    if model:
+        try:
+            del model
+            log("Model released")
+        except Exception as e:
+            log(f"Model release error: {e}")
+
+    log("Cleanup finished")
+
+def handle_exit(signum=None, frame=None):
+    log(f"Exit signal received: {signum}")
+    cleanup()
+    sys.exit(0)
+
 def main():
     log("Starting app...")
     load_model()
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+
+    signal.signal(signal.SIGINT, handle_exit)   # Ctrl+C
+    signal.signal(signal.SIGTERM, handle_exit)  # system terminate
+    atexit.register(cleanup)                    # normal exit
+
     main()
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+
+    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    listener.start()
+
+    try:
         listener.join()
+    except KeyboardInterrupt:
+        handle_exit()
