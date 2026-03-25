@@ -3,7 +3,7 @@ macOS UI components for Sunny Whisper.
 """
 
 import os
-from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject
+from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject, NSMenu, NSMenuItem
 from PyObjCTools import AppHelper
 from utils import log, get_base_dir
 
@@ -52,6 +52,16 @@ def create_menu_bar():
     icon.setSize_((18, 18))
 
     status_item.button().setImage_(icon)
+    
+    # Create menu
+    menu = NSMenu.alloc().init()
+    
+    # Add Quit menu item
+    quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", "terminate:", "q")
+    menu.addItem_(quit_item)
+    
+    # Set menu for status item
+    status_item.setMenu_(menu)
 
     return status_item
 
