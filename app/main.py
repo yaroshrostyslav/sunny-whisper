@@ -1,8 +1,3 @@
-"""
-Sunny Whisper - Main application entry point.
-Modular speech-to-text application with macOS menu bar integration.
-"""
-
 import multiprocessing
 import threading
 from pynput import keyboard
