@@ -41,7 +41,7 @@ def setup_app():
     
     return app, delegate
 
-def create_menu_bar():
+def create_status_bar():
     """Create menu bar icon in macOS status bar."""
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()

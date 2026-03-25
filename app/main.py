@@ -7,7 +7,7 @@ from utils import log
 from audio_recorder import on_press, on_release, cleanup_recording
 from transcriber import load_model, transcribe_audio, cleanup_model
 from clipboard_handler import paste_text
-from macos_ui import create_menu_bar, run_event_loop, setup_app, cleanup
+from macos_ui import create_status_bar, run_event_loop, setup_app, cleanup
 
 def process_audio(audio):
     """Process recorded audio through transcription and clipboard."""
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     app, delegate = setup_app()
 
     # Create menu bar icon in macOS status bar
-    status_item = create_menu_bar()
+    status_item = create_status_bar()
 
     listener = keyboard.Listener(on_press=on_press, on_release=on_release_wrapper)
     listener.start()
