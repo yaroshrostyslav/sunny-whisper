@@ -4,13 +4,14 @@ from pathlib import Path
 import multiprocessing, subprocess, time, psutil, os, sys
 import sounddevice as sd
 import numpy as np
-from scipy.io.wavfile import write
 from pynput import keyboard
 from pynput.keyboard import Controller, Key
 import pyperclip
 from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject, NSApplicationTerminateReply
 from PyObjCTools import AppHelper
 import threading
+from scipy.signal import resample_poly
+from math import gcd
 
 # --- Constants and Global Variables ---
 APP_NAME = "Sunny Whisper"
@@ -92,22 +93,19 @@ def stop_recording():
     if not recording:
         log("No audio captured")
         return
-    audio = np.concatenate(recording, axis=0)
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    output_file = CACHE_DIR / f"rec_{timestamp}.wav"
-    write(str(output_file), FS, audio)
-    log(f"Saved {output_file}")
-    process_audio(str(output_file))
-    delete_audio(str(output_file))
+    audio = np.concatenate(recording, axis=0).flatten().astype(np.float32)
+    # Resampling 44100 → 16000 Hz
+    TARGET_SR = 16000
+    g = gcd(FS, TARGET_SR)
+    audio = resample_poly(audio, TARGET_SR // g, FS // g)
+    process_audio(audio)
 
-def process_audio(file):
-    log(f"Processing {file}")
-    full_text = transcribe_audio(str(file))
-    # Check that text is not empty
+def process_audio(audio: np.ndarray):
+    log("Processing audio...")
+    full_text = transcribe_audio(audio)
     if not full_text or not full_text.strip():
         log("Empty transcription, skip paste")
         return
-    # Copy to clipboard
     try:
         pyperclip.copy(full_text)
         kb = Controller()
@@ -169,26 +167,19 @@ def load_model():
     log(f"Memory usage after model load: {process.memory_info().rss / 1024 ** 2:.2f} MB")
     log("Model loaded successfully.")
 
-def transcribe_audio(audio_file: str) -> str:
-    """
-    Transcribes audio file using Whisper model,
-    logs the process and returns the full text.
-    """
-    log(f"Starting transcription for {audio_file}...")
+def transcribe_audio(audio: np.ndarray) -> str:
+    log("Starting transcription...")
     start_time = time.time()
 
-    segments, info = model.transcribe(audio_file, beam_size=5)
+    # faster-whisper accepts numpy array directly
+    segments, info = model.transcribe(audio, beam_size=5)
 
     elapsed = time.time() - start_time
     log(f"Transcription completed in {elapsed:.2f} sec")
-    log(f"Detected language: {info.language} with probability {info.language_probability}")
+    log(f"Detected language: {info.language} ({info.language_probability:.2f})")
 
-    # Form the full text
     full_text = "".join(segment.text for segment in segments)
-
-    log("Transcribed text preview:")
     log(full_text[:500] + "..." if len(full_text) > 500 else full_text)
-
     return full_text
 
 def cleanup():

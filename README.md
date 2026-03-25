@@ -82,9 +82,9 @@ pyinstaller --windowed --name 'Sunny Whisper' \
 
 1. **Model Loading**: On first run, the application downloads the Whisper large-v3 model from Hugging Face. Subsequent launches use the locally cached model.
 2. **Audio Capture**: When you hold the right Shift key, audio is captured from your microphone at 44.1kHz
-3. **Processing**: When you release the key, the audio is saved as a temporary WAV file
-4. **Transcription**: The Whisper model transcribes the audio to text
-5. **Cleanup**: The temporary audio file is deleted and the text is pasted
+3. **Processing**: When you release the key, the audio is resampled from 44.1kHz to 16kHz for optimal Whisper performance
+4. **Transcription**: The Whisper model transcribes the audio to text using beam search decoding
+5. **Automatic Paste**: The transcribed text is automatically pasted at your cursor position using Cmd+V
 
 ## Configuration
 
@@ -110,12 +110,14 @@ RECORD_KEYS = [keyboard.Key.ctrl_r]  # Use right Ctrl instead of right Shift
 - `faster-whisper`: Whisper model implementation
 - `sounddevice`: Audio capture from microphone
 - `numpy`: Audio data processing
-- `scipy`: WAV file writing
+- `scipy`: Audio resampling and signal processing
 - `pynput`: Keyboard shortcut detection
 - `pyperclip`: Clipboard operations
 - `psutil`: Memory usage monitoring
 - `huggingface-hub`: Model downloading
 - `pyinstaller`: Application bundling
+- `PyObjCTools`: macOS integration
+- `AppKit`: macOS native UI components
 
 ## Logging
 
