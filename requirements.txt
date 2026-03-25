@@ -6,3 +6,4 @@ pyperclip
 psutil
 faster-whisper
 pyinstaller
+huggingface_hub

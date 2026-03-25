@@ -3,12 +3,12 @@
 APP_VERSION = "1.0.0"  # ← меняешь только здесь
 
 a = Analysis(
-    ['main.py'],
+    ['app/main.py'],
     pathex=[],
     binaries=[],
     datas=[
         ('model', 'model'),
-        ('icon-menu-bar.png', '.'),
+        ('icons/icon-menu-bar.png', '.'),
     ],
     hiddenimports=['sounddevice', 'scipy', 'pynput.keyboard._darwin'],
     hookspath=[],
@@ -51,7 +51,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Sunny Whisper.app',
-    icon="icon.icns",
+    icon="icons/icon.icns",
     bundle_identifier="com.rostyslavyarosh.sunny-whisper",
     version=APP_VERSION,
     info_plist={

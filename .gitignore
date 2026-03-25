@@ -3,4 +3,4 @@
 /venv
 /dist
 /build
-/model
+/app/model
