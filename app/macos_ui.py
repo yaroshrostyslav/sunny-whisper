@@ -48,7 +48,11 @@ def create_status_bar():
     status_bar = NSStatusBar.systemStatusBar()
     status_item = status_bar.statusItemWithLength_(NSVariableStatusItemLength)
 
-    icon_path = os.path.join(base_dir, "icon-menu-bar.png")
+    import sys
+    if getattr(sys, "frozen", False):
+        icon_path = os.path.join(base_dir, "icon-menu-bar.png")
+    else:
+        icon_path = os.path.join(base_dir, "..", "icons", "icon-menu-bar.png")
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_((18, 18))
 
