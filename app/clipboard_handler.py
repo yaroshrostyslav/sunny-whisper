@@ -2,8 +2,8 @@
 Clipboard operations for Sunny Whisper.
 """
 
+import subprocess
 import pyperclip
-from pynput.keyboard import Controller, Key
 from utils import log
 
 def paste_text(text):
@@ -14,9 +14,11 @@ def paste_text(text):
 
     try:
         pyperclip.copy(text)
-        kb = Controller()
-        with kb.pressed(Key.cmd):
-            kb.press('v')
+        subprocess.run(
+            ["osascript", "-e", 'tell application "System Events" to keystroke "v" using command down'],
+            check=True,
+            capture_output=True,
+        )
         log("Text pasted")
         return True
     except Exception as e:

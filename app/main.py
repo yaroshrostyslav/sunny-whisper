@@ -19,14 +19,14 @@ def on_release_wrapper(key):
     """Wrapper for on_release that handles audio processing."""
     audio = on_release(key)
     if audio is not None:
-        process_audio(audio)
+        threading.Thread(target=process_audio, args=(audio,), daemon=True).start()
 
 def main():
-    log("Starting app...")
     # Load Whisper model in a background thread to avoid blocking app startup
     threading.Thread(target=load_model, daemon=True).start()
 
 if __name__ == "__main__":
+    log("Starting app...")
     multiprocessing.freeze_support()
 
     # Setup macOS application

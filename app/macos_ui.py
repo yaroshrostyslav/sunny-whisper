@@ -3,7 +3,7 @@ macOS UI components for Sunny Whisper.
 """
 
 import os
-from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject, NSMenu, NSMenuItem
+from AppKit import NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage, NSObject, NSMenu, NSMenuItem, NSApplicationActivationPolicyAccessory
 from PyObjCTools import AppHelper
 from utils import log, get_base_dir
 
@@ -35,10 +35,11 @@ def cleanup():
 def setup_app():
     """Setup and configure the macOS application."""
     app = NSApplication.sharedApplication()
-    
+    app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+
     delegate = AppDelegate.alloc().init()
     app.setDelegate_(delegate)
-    
+
     return app, delegate
 
 def create_status_bar():
