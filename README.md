@@ -1,21 +1,24 @@
 # Sunny Whisper
 
-A macOS desktop application that provides real-time speech-to-text transcription using OpenAI's Whisper model. Hold the right Shift key to record audio from your microphone, and the transcribed text will be automatically pasted at your cursor position.
+A macOS menu bar app for real-time speech-to-text transcription using OpenAI's Whisper model. Hold the right Shift key to record audio, release to transcribe — the text is automatically pasted at your cursor position.
 
 ## Features
 
-- **Real-time Speech-to-Text**: Uses OpenAI's Whisper large-v3 model for accurate transcription
-- **Keyboard Shortcut Control**: Hold right Shift to start/stop recording
-- **Automatic Paste**: Transcribed text is automatically pasted at cursor position
-- **Background Operation**: Runs silently in the background
-- **Local Processing**: All audio processing happens locally on your device
-- **Language Detection**: Automatically detects the spoken language
-- **Memory Efficient**: Uses int8 quantization for reduced memory usage
+- **Real-time Speech-to-Text**: Uses faster-whisper (small model) for fast on-device transcription
+- **Configurable Shortcut**: Change the recording key via the menu bar
+- **Language Selection**: Choose recognition language or use auto-detection
+- **Automatic Paste**: Transcribed text is pasted at cursor position (layout-independent)
+- **Menu Bar Operation**: Runs silently as a menu bar app with no Dock icon
+- **Local Processing**: All audio processing happens on-device, no data sent to servers
+- **VAD Filter**: Silences are skipped automatically for faster transcription
+- **Memory Efficient**: Uses int8 quantization
 
 ## Requirements
 
+- macOS
 - Microphone access
 - Accessibility access (for keyboard shortcut detection)
+- Input Monitoring access (for global key listening)
 - Internet connection (for initial model download only)
 
 ## Installation
@@ -48,125 +51,106 @@ pip install -r requirements.txt
 
 4. Run the application:
 ```bash
+cd app
 python3.11 main.py
 ```
 
 ### Building the Application
 
-To create a standalone macOS app bundle:
-
 ```bash
 pyinstaller 'Sunny Whisper.spec' -y
 ```
 
-Or using the direct command:
-```bash
-pyinstaller --windowed --name 'Sunny Whisper' \
-  --hidden-import=sounddevice \
-  --hidden-import=scipy \
-  --hidden-import=pynput.keyboard._darwin \
-  --add-data "model:model" \
-  main.py -y
-```
-
-**Note**: Before building, run the script once to download the Whisper model from Hugging Face into the `model` directory.
+> **Note**: Run the script from source at least once before building to download the Whisper model into the `app/model/` directory.
 
 ## Usage
 
-1. **Grant Permissions**: On first run, grant microphone and accessibility permissions when prompted
-2. **Start Recording**: Hold the right Shift key to begin recording audio
-3. **Stop Recording**: Release the right Shift key to stop recording
-4. **Automatic Transcription**: The audio will be processed and the transcribed text will be automatically pasted at your cursor position
+1. **Grant Permissions**: On first run, grant Microphone, Accessibility, and Input Monitoring permissions when prompted
+2. **Start Recording**: Hold the configured shortcut key (default: right Shift)
+3. **Stop Recording**: Release the key
+4. **Automatic Transcription**: The transcribed text is pasted at your cursor position
 
-## How It Works
+### Menu Bar
 
-1. **Model Loading**: On first run, the application downloads the Whisper large-v3 model from Hugging Face. Subsequent launches use the locally cached model.
-2. **Audio Capture**: When you hold the right Shift key, audio is captured from your microphone at 44.1kHz
-3. **Processing**: When you release the key, the audio is resampled from 44.1kHz to 16kHz for optimal Whisper performance
-4. **Transcription**: The Whisper model transcribes the audio to text using beam search decoding
-5. **Automatic Paste**: The transcribed text is automatically pasted at your cursor position using Cmd+V
+Click the menu bar icon to access settings:
+
+| Item | Description |
+|---|---|
+| Language: \<lang\> | Currently selected recognition language |
+| Change Language | Open language selection window |
+| Shortcut: \<key\> | Currently configured recording key |
+| Change Shortcut | Open shortcut change window |
+| Quit | Exit the application |
 
 ## Configuration
 
-### Model Selection
+User settings are stored in `~/Library/Caches/Sunny Whisper/user_config.json` and persist across launches.
 
-The default model is `SYSTRAN/faster-whisper-large-v3`. You can change this by modifying the `HF_MODEL_REPO_ID` constant in `main.py`:
+### Language
 
-```python
-HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"  # For faster but less accurate transcription
-```
+Select a language in the menu bar to improve accuracy and speed. Available options: Not selected (auto-detect), English, Russian, Ukrainian.
 
 ### Recording Shortcut
 
-To change the recording shortcut, modify the `RECORD_KEYS` list:
+Click "Change Shortcut" in the menu bar and press any key to reassign the recording trigger.
+
+### Model Selection
+
+The default model is `SYSTRAN/faster-whisper-small`. To switch to a larger model, change `HF_MODEL_REPO_ID` in `app/config.py`:
 
 ```python
-RECORD_KEYS = [keyboard.Key.ctrl_r]  # Use right Ctrl instead of right Shift
+HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-large-v3"
 ```
 
-## Dependencies
+## How It Works
 
-- **Python 3.11+**: Required runtime environment
-- `faster-whisper`: Whisper model implementation
-- `sounddevice`: Audio capture from microphone
-- `numpy`: Audio data processing
-- `scipy`: Audio resampling and signal processing
-- `pynput`: Keyboard shortcut detection
-- `pyperclip`: Clipboard operations
-- `psutil`: Memory usage monitoring
-- `huggingface-hub`: Model downloading
-- `pyinstaller`: Application bundling
-- `PyObjCTools`: macOS integration
-- `AppKit`: macOS native UI components
+1. **Model Loading**: On first run, the Whisper model is downloaded from Hugging Face and cached in `app/model/`
+2. **Audio Capture**: Holding the shortcut key captures audio at 44.1kHz
+3. **Processing**: On key release, audio is resampled to 16kHz
+4. **Transcription**: Whisper transcribes the audio (VAD filter skips silent parts)
+5. **Paste**: Text is copied to clipboard and pasted via Cmd+V (Quartz CGEvent, layout-independent)
 
 ## Logging
 
-The application logs debug information to:
+Debug logs are written to:
 ```
-~/Library/Caches/'Sunny Whisper'/debug.log
+~/Library/Caches/Sunny Whisper/debug.log
 ```
-
-## Memory Usage
-
-The application uses int8 quantization to reduce memory usage. Typical memory consumption:
-- Before model load: ~50MB
-- After model load: ~1-2GB (depending on model size)
 
 ## Troubleshooting
 
-### Permission Issues
+### App doesn't respond to keyboard shortcuts
 
-If the app doesn't respond to keyboard shortcuts:
-1. Go to System Preferences > Security & Privacy > Privacy
-2. Add the app to Accessibility permissions
+1. Open **System Settings → Privacy & Security → Accessibility** — add the app
+2. Open **System Settings → Privacy & Security → Input Monitoring** — add the app
 3. Restart the application
 
-If recording doesn't work:
-1. Go to System Preferences > Security & Privacy > Privacy
-2. Add the app to Microphone permissions
-3. Restart the application
+### Recording doesn't work
 
-### Model Download Issues
+1. Open **System Settings → Privacy & Security → Microphone** — add the app
+2. Restart the application
 
-If the model fails to download:
-1. Check your internet connection
-2. Ensure you have sufficient disk space (~3GB required)
-3. Check the debug log for specific error messages
+### Transcription is slow
 
-### Performance Issues
+- The app uses the `faster-whisper-small` model by default, which is already optimized
+- Selecting a specific language (instead of auto-detect) can speed up transcription
+- Close other memory-intensive applications
 
-If transcription is slow:
-1. Consider using a smaller model (`faster-whisper-small`)
-2. Close other memory-intensive applications
-3. Restart the application to clear memory
+## Dependencies
+
+- `faster-whisper` — Whisper model inference
+- `sounddevice` — microphone audio capture
+- `numpy`, `scipy` — audio data processing and resampling
+- `pynput` — global keyboard listener
+- `pyperclip` — clipboard operations
+- `psutil` — memory monitoring
+- `huggingface-hub` — model downloading
+- `pyinstaller` — application bundling
+- `PyObjC` / `AppKit` — macOS native UI and system integration
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
