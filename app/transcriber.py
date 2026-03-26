@@ -58,22 +58,21 @@ def transcribe_audio(audio):
     log("Starting transcription...")
     start_time = time.time()
 
-    # faster-whisper accepts numpy array directly
-    segments, info = model.transcribe(
-        audio,
-        beam_size=5,
-        vad_filter=True,  # skip silent parts to speed up transcription
-    )
+    try:
+        # faster-whisper accepts numpy array directly
+        segments, info = model.transcribe(
+            audio,
+            beam_size=5,
+            vad_filter=True,  # skip silent parts to speed up transcription
+        )
+        full_text = "".join(segment.text for segment in segments)
+    except Exception as e:
+        log(f"Transcription error: {e}")
+        return ""
 
     elapsed = time.time() - start_time
     log(f"Transcription completed in {elapsed:.2f} sec")
     log(f"Detected language: {info.language} ({info.language_probability:.2f})")
-
-    # Time the full text formation
-    text_start_time = time.time()
-    full_text = "".join(segment.text for segment in segments)
-    text_elapsed = time.time() - text_start_time
-    log(f"Full text formation completed in {text_elapsed:.4f} sec")
     
     log(full_text[:500] + "..." if len(full_text) > 500 else full_text)
     return full_text

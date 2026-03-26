@@ -9,6 +9,8 @@ a = Analysis(
     datas=[
         ('app/model', 'model'),
         ('icons/icon-menu-bar.png', '.'),
+        # Silero VAD ONNX model required by faster-whisper when vad_filter=True
+        ('venv/lib/python3.11/site-packages/faster_whisper/assets/silero_vad_v6.onnx', 'faster_whisper/assets'),
     ],
     hiddenimports=['sounddevice', 'scipy', 'pynput.keyboard._darwin'],
     hookspath=[],
