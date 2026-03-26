@@ -59,7 +59,11 @@ def transcribe_audio(audio):
     start_time = time.time()
 
     # faster-whisper accepts numpy array directly
-    segments, info = model.transcribe(audio, beam_size=BEAM_SIZE)
+    segments, info = model.transcribe(
+        audio,
+        beam_size=5,
+        vad_filter=True,  # skip silent parts to speed up transcription
+    )
 
     elapsed = time.time() - start_time
     log(f"Transcription completed in {elapsed:.2f} sec")
