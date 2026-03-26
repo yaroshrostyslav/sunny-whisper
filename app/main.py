@@ -4,6 +4,7 @@ from pynput import keyboard
 
 # Import modular components
 from utils import log
+from config import init_config
 from audio_recorder import on_press, on_release, cleanup_recording
 from transcriber import load_model, transcribe_audio, cleanup_model
 from clipboard_handler import paste_text
@@ -27,6 +28,7 @@ def main():
 
 if __name__ == "__main__":
     log("Starting app...")
+    init_config()
     multiprocessing.freeze_support()
 
     # Setup macOS application

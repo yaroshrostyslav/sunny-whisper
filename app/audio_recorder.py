@@ -6,7 +6,7 @@ import numpy as np
 import sounddevice as sd
 from scipy.signal import resample_poly
 from math import gcd
-from config import FS, TARGET_SR, RECORD_KEYS
+from config import FS, TARGET_SR, get_config_value
 from utils import log
 
 # Global variables
@@ -53,9 +53,9 @@ def stop_recording():
 def on_press(key):
     """Handle key press events."""
     try:
-        if hasattr(key, 'name') and key.name in RECORD_KEYS:
+        if hasattr(key, 'name') and key.name in get_config_value("RECORD_KEYS"):
             start_recording()
-        elif hasattr(key, 'char') and key.char and key.char in RECORD_KEYS:
+        elif hasattr(key, 'char') and key.char and key.char in get_config_value("RECORD_KEYS"):
             start_recording()
     except Exception as e:
         log(f"Press error: {e}")
@@ -63,9 +63,9 @@ def on_press(key):
 def on_release(key):
     """Handle key release events."""
     try:
-        if hasattr(key, 'name') and key.name in RECORD_KEYS:
+        if hasattr(key, 'name') and key.name in get_config_value("RECORD_KEYS"):
             return stop_recording()
-        elif hasattr(key, 'char') and key.char and key.char in RECORD_KEYS:
+        elif hasattr(key, 'char') and key.char and key.char in get_config_value("RECORD_KEYS"):
             return stop_recording()
     except Exception as e:
         log(f"Release error: {e}")
