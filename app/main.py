@@ -1,8 +1,7 @@
 import multiprocessing
 import threading
-from pynput import keyboard
 
-# Import modular components
+import listener_manager
 from utils import log
 from config import init_config
 from audio_recorder import on_press, on_release, cleanup_recording
@@ -37,8 +36,8 @@ if __name__ == "__main__":
     # Create menu bar icon in macOS status bar
     status_item = create_status_bar()
 
-    listener = keyboard.Listener(on_press=on_press, on_release=on_release_wrapper)
-    listener.start()
+    listener_manager.init(on_press, on_release_wrapper)
+    listener_manager.start()
 
     main()
     run_event_loop()
