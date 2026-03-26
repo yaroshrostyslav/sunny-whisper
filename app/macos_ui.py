@@ -7,7 +7,7 @@ import sys
 from AppKit import (
     NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage,
     NSObject, NSMenu, NSMenuItem, NSApplicationActivationPolicyAccessory,
-    NSTextField, NSButton, NSWindow,
+    NSTextField, NSButton, NSWindow, NSPopUpButton,
     NSWindowStyleMaskTitled, NSWindowStyleMaskClosable,
     NSBackingStoreBuffered,
 )
@@ -15,10 +15,22 @@ from PyObjCTools import AppHelper
 from config import get_config_value
 from utils import log, get_base_dir
 
+# Language options: (display_name, config_value)
+_LANGUAGE_OPTIONS = [
+    ("Not selected", "Not selected"),
+    ("English", "en"),
+    ("Russian", "ru"),
+    ("Ukrainian", "uk"),
+]
+_LANGUAGE_DISPLAY = {v: name for name, v in _LANGUAGE_OPTIONS}
+
 # Module-level references to prevent GC and allow updates
 _shortcut_display_item = None
+_language_display_item = None
 _menu_controller = None
+_language_menu_controller = None
 _shortcut_window_controller = None
+_language_window_controller = None
 
 class KeyCaptureField(NSTextField):
     """NSTextField subclass that displays a captured key name (read-only)."""
@@ -141,6 +153,104 @@ def _clear_window_controller():
     _shortcut_window_controller = None
 
 
+class LanguageWindowController(NSObject):
+    """Manages the Change Language modal window."""
+
+    def openLanguageWindow_(self, sender):
+        global _language_window_controller
+        if _language_window_controller is not None:
+            _language_window_controller._window.makeKeyAndOrderFront_(None)
+            return
+        ctrl = LanguageWindowController.alloc().init()
+        _language_window_controller = ctrl
+        ctrl._show()
+
+    def _show(self):
+        import listener_manager
+        current_lang = get_config_value("language")
+
+        # Pause recording while window is open
+        listener_manager.set_capture_callback(lambda key: None)
+
+        self._window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            ((0, 0), (380, 160)),
+            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable,
+            NSBackingStoreBuffered,
+            False,
+        )
+        self._window.setTitle_("Change Recognition Language")
+        self._window.center()
+        self._window.setDelegate_(self)
+        self._window.setReleasedWhenClosed_(False)
+
+        content = self._window.contentView()
+
+        label = NSTextField.alloc().initWithFrame_(((20, 110), (340, 36)))
+        label.setStringValue_("Select the language used for speech recognition")
+        label.setBezeled_(False)
+        label.setDrawsBackground_(False)
+        label.setEditable_(False)
+        label.setSelectable_(False)
+        content.addSubview_(label)
+
+        self._popup = NSPopUpButton.alloc().initWithFrame_(((20, 70), (340, 28)))
+        for display_name, _ in _LANGUAGE_OPTIONS:
+            self._popup.addItemWithTitle_(display_name)
+        current_display = _LANGUAGE_DISPLAY.get(current_lang, "Not selected")
+        self._popup.selectItemWithTitle_(current_display)
+        content.addSubview_(self._popup)
+
+        cancel_btn = NSButton.alloc().initWithFrame_(((185, 20), (85, 32)))
+        cancel_btn.setTitle_("Cancel")
+        cancel_btn.setTarget_(self)
+        cancel_btn.setAction_("cancel:")
+        content.addSubview_(cancel_btn)
+
+        save_btn = NSButton.alloc().initWithFrame_(((280, 20), (80, 32)))
+        save_btn.setTitle_("Save")
+        save_btn.setTarget_(self)
+        save_btn.setAction_("save:")
+        content.addSubview_(save_btn)
+
+        self._window.setDefaultButtonCell_(save_btn.cell())
+        self._window.makeKeyAndOrderFront_(None)
+        NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+
+    def save_(self, sender):
+        selected_title = self._popup.titleOfSelectedItem()
+        lang_value = next(
+            (v for name, v in _LANGUAGE_OPTIONS if name == selected_title),
+            "Not selected",
+        )
+        try:
+            from config import update_config
+            update_config("language", lang_value)
+            _update_language_display(lang_value)
+            log(f"Language updated to: {lang_value}")
+        except Exception as e:
+            log(f"Error saving language: {e}")
+        self._window.close()
+
+    def cancel_(self, sender):
+        self._window.close()
+
+    def windowWillClose_(self, notification):
+        import listener_manager
+        listener_manager.clear_capture_callback()
+        AppHelper.callAfter(_clear_language_window_controller)
+
+
+def _clear_language_window_controller():
+    global _language_window_controller
+    _language_window_controller = None
+
+
+def _update_language_display(lang_value):
+    if _language_display_item:
+        display = _LANGUAGE_DISPLAY.get(lang_value, "Not selected")
+        _language_display_item.setTitle_(f"Language: {display}")
+
+
 def _update_shortcut_display(key):
     if _shortcut_display_item:
         _shortcut_display_item.setTitle_(f"Shortcut: {key}")
@@ -178,7 +288,7 @@ def setup_app():
 
 def create_status_bar():
     """Create menu bar icon in macOS status bar."""
-    global _shortcut_display_item, _menu_controller
+    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller
 
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
@@ -194,7 +304,24 @@ def create_status_bar():
 
     menu = NSMenu.alloc().init()
 
-    # Current shortcut display (non-interactive)
+    # Language display (non-interactive)
+    current_lang = get_config_value("language")
+    lang_display = _LANGUAGE_DISPLAY.get(current_lang, "Not selected")
+    _language_display_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        f"Language: {lang_display}", None, ""
+    )
+    _language_display_item.setEnabled_(False)
+    menu.addItem_(_language_display_item)
+
+    # Change Language
+    _language_menu_controller = LanguageWindowController.alloc().init()
+    change_lang_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "Change Language", "openLanguageWindow:", ""
+    )
+    change_lang_item.setTarget_(_language_menu_controller)
+    menu.addItem_(change_lang_item)
+
+    # Shortcut display (non-interactive)
     current_key = get_config_value("RECORD_KEYS")[0]
     _shortcut_display_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
         f"Shortcut: {current_key}", None, ""
@@ -209,8 +336,6 @@ def create_status_bar():
     )
     change_item.setTarget_(_menu_controller)
     menu.addItem_(change_item)
-
-    menu.addItem_(NSMenuItem.separatorItem())
 
     # Quit
     quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", "terminate:", "q")

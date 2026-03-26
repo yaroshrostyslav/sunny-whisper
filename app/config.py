@@ -28,7 +28,10 @@ BEAM_SIZE = 5
 # User config defaults
 _DEFAULTS = {
     "RECORD_KEYS": ["shift_r"],
+    "language": "Not selected",
 }
+
+_VALID_LANGUAGES = {"Not selected", "en", "ru", "uk"}
 
 # In-memory cache
 _config: dict = {}
@@ -36,12 +39,16 @@ _config: dict = {}
 def init_config():
     """Load user config from file, or create it with defaults if missing."""
     global _config
+    print(f"Config dir: {_CONFIG_FILE}")
     if _CONFIG_FILE.exists():
         with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
-            _config = json.load(f)
+            loaded = json.load(f)
+        _config = {**_DEFAULTS, **loaded}  # merge to handle missing keys
     else:
         _config = dict(_DEFAULTS)
         _save_config()
+    if _config.get("language") not in _VALID_LANGUAGES:
+        _config["language"] = "Not selected"
 
 def get_config_value(key):
     """Get a config value from the in-memory cache."""

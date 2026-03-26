@@ -59,11 +59,16 @@ def transcribe_audio(audio):
     start_time = time.time()
 
     try:
+        from config import get_config_value
+        language = get_config_value("language")
+        language = None if language == "Not selected" else language
+
         # faster-whisper accepts numpy array directly
         segments, info = model.transcribe(
             audio,
             beam_size=5,
             vad_filter=True,  # skip silent parts to speed up transcription
+            language=language,
         )
         full_text = "".join(segment.text for segment in segments)
     except Exception as e:
@@ -72,7 +77,8 @@ def transcribe_audio(audio):
 
     elapsed = time.time() - start_time
     log(f"Transcription completed in {elapsed:.2f} sec")
-    log(f"Detected language: {info.language} ({info.language_probability:.2f})")
+    log(f"Selected language: {language or 'auto'}")
+    log(f"Detected language: {info.language} ({info.language_probability:.2f}), Selected language: {language or 'auto'}")
     
     log(full_text[:500] + "..." if len(full_text) > 500 else full_text)
     return full_text
