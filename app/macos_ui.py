@@ -82,7 +82,7 @@ class ShortcutWindowController(NSObject):
 
         # Instruction label
         label = NSTextField.alloc().initWithFrame_(((20, 110), (340, 36)))
-        label.setStringValue_("Click the field below and press a new shortcut key")
+        label.setStringValue_("Press a new shortcut key: ")
         label.setBezeled_(False)
         label.setDrawsBackground_(False)
         label.setEditable_(False)
