@@ -8,7 +8,8 @@ from utils import log
 _listener = None
 _on_press = None
 _on_release = None
-_paused = False
+_capture_callback = None  # when set, redirects key events to shortcut change window
+
 
 def init(on_press, on_release):
     """Set the callback handlers (call once at startup)."""
@@ -16,13 +17,30 @@ def init(on_press, on_release):
     _on_press = on_press
     _on_release = on_release
 
+
+def set_capture_callback(callback):
+    """Redirect key press events to callback (e.g. shortcut change window)."""
+    global _capture_callback
+    _capture_callback = callback
+
+
+def clear_capture_callback():
+    """Restore normal key press handling."""
+    global _capture_callback
+    _capture_callback = None
+
+
 def _press(key):
-    if not _paused:
+    if _capture_callback is not None:
+        _capture_callback(key)
+    else:
         _on_press(key)
 
+
 def _release(key):
-    if not _paused:
+    if _capture_callback is None:
         return _on_release(key)
+
 
 def start():
     """Start the global keyboard listener."""
@@ -33,6 +51,7 @@ def start():
     _listener.start()
     log("Listener started")
 
+
 def stop():
     """Stop the global keyboard listener."""
     global _listener
@@ -40,20 +59,3 @@ def stop():
         _listener.stop()
         _listener = None
         log("Listener stopped")
-
-def pause():
-    """Pause event handling without stopping the listener thread."""
-    global _paused
-    _paused = True
-    log("Listener paused")
-
-def resume():
-    """Resume event handling."""
-    global _paused
-    _paused = False
-    log("Listener resumed")
-
-def restart():
-    """Restart the listener (e.g. after shortcut change)."""
-    stop()
-    start()

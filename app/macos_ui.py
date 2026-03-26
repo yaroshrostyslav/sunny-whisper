@@ -20,21 +20,8 @@ _shortcut_display_item = None
 _menu_controller = None
 _shortcut_window_controller = None
 
-# macOS key code → pynput key name for modifier/special keys
-_MODIFIER_KEY_CODES = {
-    56: "shift",
-    60: "shift_r",
-    55: "cmd",
-    54: "cmd_r",
-    58: "alt",
-    61: "alt_r",
-    59: "ctrl",
-    62: "ctrl_r",
-    57: "caps_lock",
-}
-
 class KeyCaptureField(NSTextField):
-    """NSTextField subclass that captures a single key press instead of typed text."""
+    """NSTextField subclass that displays a captured key name (read-only)."""
 
     def initWithFrame_(self, frame):
         self = super().initWithFrame_(frame)
@@ -45,25 +32,10 @@ class KeyCaptureField(NSTextField):
         self.setSelectable_(False)
         return self
 
-    def acceptsFirstResponder(self):
-        return True
-
-    def keyDown_(self, event):
-        key_code = event.keyCode()
-        name = _MODIFIER_KEY_CODES.get(key_code)
-        if name is None:
-            chars = event.characters()
-            name = chars if chars else None
-        if name:
-            self._captured_key = name
-            self.setStringValue_(name)
-
-    def flagsChanged_(self, event):
-        key_code = event.keyCode()
-        name = _MODIFIER_KEY_CODES.get(key_code)
-        if name:
-            self._captured_key = name
-            self.setStringValue_(name)
+    def updateKey_(self, key_name):
+        """Update displayed key. Called on main thread via AppHelper.callAfter."""
+        self._captured_key = key_name
+        self.setStringValue_(key_name)
 
 class ShortcutWindowController(NSObject):
     """Manages the Change Shortcut modal window."""
@@ -71,17 +43,29 @@ class ShortcutWindowController(NSObject):
     def openShortcutWindow_(self, sender):
         global _shortcut_window_controller
         if _shortcut_window_controller is not None:
-            if hasattr(_shortcut_window_controller, "_window"):
-                _shortcut_window_controller._window.makeKeyAndOrderFront_(None)
+            _shortcut_window_controller._window.makeKeyAndOrderFront_(None)
             return
         ctrl = ShortcutWindowController.alloc().init()
         _shortcut_window_controller = ctrl
         ctrl._show()
 
-    def _show(self):
+    def _start_capture_listener(self):
         import listener_manager
+        field = self._capture_field
+
+        def on_press(key):
+            name = getattr(key, 'name', None) or getattr(key, 'char', None)
+            if name:
+                AppHelper.callAfter(field.updateKey_, name)
+
+        listener_manager.set_capture_callback(on_press)
+
+    def _stop_capture_listener(self):
+        import listener_manager
+        listener_manager.clear_capture_callback()
+
+    def _show(self):
         current_key = get_config_value("RECORD_KEYS")[0]
-        listener_manager.pause()
 
         self._window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
             ((0, 0), (380, 160)),
@@ -128,6 +112,7 @@ class ShortcutWindowController(NSObject):
         self._window.makeKeyAndOrderFront_(None)
         NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
         self._window.makeFirstResponder_(self._capture_field)
+        self._start_capture_listener()
 
     def save_(self, sender):
         key = self._capture_field._captured_key
@@ -148,10 +133,13 @@ class ShortcutWindowController(NSObject):
         self._window.close()
 
     def windowWillClose_(self, notification):
-        global _shortcut_window_controller
-        _shortcut_window_controller = None
-        import listener_manager
-        listener_manager.resume()
+        self._stop_capture_listener()
+        AppHelper.callAfter(_clear_window_controller)
+
+def _clear_window_controller():
+    global _shortcut_window_controller
+    _shortcut_window_controller = None
+
 
 def _update_shortcut_display(key):
     if _shortcut_display_item:
