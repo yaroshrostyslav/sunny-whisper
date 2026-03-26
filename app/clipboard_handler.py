@@ -2,8 +2,8 @@
 Clipboard operations for Sunny Whisper.
 """
 
-import subprocess
 import pyperclip
+import Quartz
 from utils import log
 
 def paste_text(text):
@@ -14,11 +14,12 @@ def paste_text(text):
 
     try:
         pyperclip.copy(text)
-        subprocess.run(
-            ["osascript", "-e", 'tell application "System Events" to keystroke "v" using command down'],
-            check=True,
-            capture_output=True,
-        )
+        src = Quartz.CGEventSourceCreate(Quartz.kCGEventSourceStateHIDSystemState)
+        # Key code 9 = V key (layout-independent)
+        for is_down in (True, False):
+            event = Quartz.CGEventCreateKeyboardEvent(src, 9, is_down)
+            Quartz.CGEventSetFlags(event, Quartz.kCGEventFlagMaskCommand)
+            Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
         log("Text pasted")
         return True
     except Exception as e:
