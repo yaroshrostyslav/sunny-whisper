@@ -13,7 +13,7 @@ def paste_text(text):
         return False
 
     try:
-        pyperclip.copy(text)
+        pyperclip.copy(text + " ")
         src = Quartz.CGEventSourceCreate(Quartz.kCGEventSourceStateHIDSystemState)
         # Key code 9 = V key (layout-independent)
         for is_down in (True, False):
