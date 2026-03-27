@@ -63,12 +63,17 @@ def transcribe_audio(audio):
         language = get_config_value("language")
         language = None if language == "Not selected" else language
 
+        dictionary = get_config_value("dictionary")
+        initial_prompt = ", ".join(dictionary) if dictionary else None
+        log(f"Initial prompt: {initial_prompt}")
+
         # faster-whisper accepts numpy array directly
         segments, info = model.transcribe(
             audio,
             beam_size=5,
             vad_filter=True,  # skip silent parts to speed up transcription
             language=language,
+            initial_prompt=initial_prompt,
         )
         full_text = "".join(segment.text for segment in segments)
     except Exception as e:

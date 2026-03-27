@@ -10,6 +10,7 @@ from AppKit import (
     NSTextField, NSButton, NSWindow, NSPopUpButton,
     NSWindowStyleMaskTitled, NSWindowStyleMaskClosable,
     NSBackingStoreBuffered, NSAffineTransform, NSCompositingOperationSourceOver,
+    NSTableView, NSTableColumn, NSScrollView, NSBezelBorder,
 )
 from Foundation import NSTimer
 from PyObjCTools import AppHelper
@@ -32,6 +33,8 @@ _menu_controller = None
 _language_menu_controller = None
 _shortcut_window_controller = None
 _language_window_controller = None
+_dictionary_window_controller = None
+_dictionary_menu_controller = None
 _status_button = None
 
 _ICON_STATES = {
@@ -333,6 +336,162 @@ def _update_shortcut_display(key):
     if _shortcut_display_item:
         _shortcut_display_item.setTitle_(f"Shortcut: {key}")
 
+
+class DictionaryWindowController(NSObject):
+    """Manages the Custom Dictionary modal window."""
+
+    def openDictionaryWindow_(self, sender):
+        global _dictionary_window_controller
+        if _dictionary_window_controller is not None:
+            _dictionary_window_controller._window.makeKeyAndOrderFront_(None)
+            return
+        ctrl = DictionaryWindowController.alloc().init()
+        _dictionary_window_controller = ctrl
+        ctrl._show()
+
+    def _show(self):
+        import listener_manager
+        from config import get_config_value
+        self._words = list(get_config_value("dictionary"))
+
+        listener_manager.set_capture_callback(lambda key: None)
+
+        self._window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            ((0, 0), (380, 420)),
+            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable,
+            NSBackingStoreBuffered,
+            False,
+        )
+        self._window.setTitle_("Custom Dictionary")
+        self._window.center()
+        self._window.setDelegate_(self)
+        self._window.setReleasedWhenClosed_(False)
+
+        content = self._window.contentView()
+
+        # Instruction label
+        label = NSTextField.alloc().initWithFrame_(((20, 375), (340, 32)))
+        label.setStringValue_("Add or remove words to improve speech recognition accuracy")
+        label.setBezeled_(False)
+        label.setDrawsBackground_(False)
+        label.setEditable_(False)
+        label.setSelectable_(False)
+        label.cell().setWraps_(True)
+        content.addSubview_(label)
+
+        # Add word field + button
+        self._add_field = NSTextField.alloc().initWithFrame_(((20, 335), (260, 28)))
+        self._add_field.setPlaceholderString_("New word...")
+        self._add_field.setTarget_(self)
+        self._add_field.setAction_("addWord:")
+        content.addSubview_(self._add_field)
+
+        add_btn = NSButton.alloc().initWithFrame_(((290, 335), (70, 28)))
+        add_btn.setTitle_("Add")
+        add_btn.setTarget_(self)
+        add_btn.setAction_("addWord:")
+        content.addSubview_(add_btn)
+
+        # Table inside scroll view
+        scroll = NSScrollView.alloc().initWithFrame_(((20, 80), (340, 240)))
+        scroll.setHasVerticalScroller_(True)
+        scroll.setBorderType_(NSBezelBorder)
+        scroll.setAutohidesScrollers_(True)
+
+        self._table = NSTableView.alloc().initWithFrame_(((0, 0), (340, 240)))
+        self._table.setAllowsMultipleSelection_(False)
+        self._table.setUsesAlternatingRowBackgroundColors_(True)
+        col = NSTableColumn.alloc().initWithIdentifier_("word")
+        col.setWidth_(320)
+        col.setEditable_(True)
+        col.headerCell().setStringValue_("Word")
+        self._table.addTableColumn_(col)
+        self._table.setDataSource_(self)
+        self._table.setDelegate_(self)
+
+        scroll.setDocumentView_(self._table)
+        content.addSubview_(scroll)
+
+        # Remove button (right-aligned, above table)
+        remove_btn = NSButton.alloc().initWithFrame_(((285, 48), (75, 26)))
+        remove_btn.setTitle_("Remove")
+        remove_btn.setTarget_(self)
+        remove_btn.setAction_("removeWord:")
+        content.addSubview_(remove_btn)
+
+        # Cancel / Save buttons
+        cancel_btn = NSButton.alloc().initWithFrame_(((185, 15), (85, 32)))
+        cancel_btn.setTitle_("Cancel")
+        cancel_btn.setTarget_(self)
+        cancel_btn.setAction_("cancel:")
+        content.addSubview_(cancel_btn)
+
+        save_btn = NSButton.alloc().initWithFrame_(((280, 15), (80, 32)))
+        save_btn.setTitle_("Save")
+        save_btn.setTarget_(self)
+        save_btn.setAction_("save:")
+        content.addSubview_(save_btn)
+
+        self._window.setDefaultButtonCell_(save_btn.cell())
+        self._window.makeKeyAndOrderFront_(None)
+        NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+
+    # NSTableViewDataSource
+    def numberOfRowsInTableView_(self, tv):
+        return len(self._words)
+
+    def tableView_objectValueForTableColumn_row_(self, tv, col, row):
+        if 0 <= row < len(self._words):
+            return self._words[row]
+        return ""
+
+    def tableView_setObjectValue_forTableColumn_row_(self, tv, value, col, row):
+        if value and 0 <= row < len(self._words):
+            self._words[row] = value.strip()
+
+    def addWord_(self, sender):
+        word = self._add_field.stringValue().strip()
+        if word and word not in self._words and len(self._words) < 100:
+            self._words.append(word)
+            self._table.reloadData()
+            self._add_field.setStringValue_("")
+
+    def removeWord_(self, sender):
+        row = self._table.selectedRow()
+        if row >= 0:
+            del self._words[row]
+            self._table.reloadData()
+
+    def save_(self, sender):
+        seen = set()
+        clean = []
+        for w in self._words:
+            w = w.strip()
+            if w and w not in seen and len(clean) < 100:
+                seen.add(w)
+                clean.append(w)
+        try:
+            from config import update_config
+            update_config("dictionary", clean)
+            log(f"Dictionary saved: {len(clean)} words")
+        except Exception as e:
+            log(f"Error saving dictionary: {e}")
+        self._window.close()
+
+    def cancel_(self, sender):
+        self._window.close()
+
+    def windowWillClose_(self, notification):
+        import listener_manager
+        listener_manager.clear_capture_callback()
+        AppHelper.callAfter(_clear_dictionary_window_controller)
+
+
+def _clear_dictionary_window_controller():
+    global _dictionary_window_controller
+    _dictionary_window_controller = None
+
+
 class AppDelegate(NSObject):
     """Application delegate for macOS app lifecycle management."""
 
@@ -366,7 +525,7 @@ def setup_app():
 
 def create_status_bar():
     """Create menu bar icon in macOS status bar."""
-    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button
+    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller
 
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
@@ -416,6 +575,14 @@ def create_status_bar():
     )
     change_item.setTarget_(_menu_controller)
     menu.addItem_(change_item)
+
+    # Dictionary
+    _dictionary_menu_controller = DictionaryWindowController.alloc().init()
+    dict_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "Change Dictionary", "openDictionaryWindow:", ""
+    )
+    dict_item.setTarget_(_dictionary_menu_controller)
+    menu.addItem_(dict_item)
 
     # Quit
     quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", "terminate:", "q")

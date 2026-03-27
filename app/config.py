@@ -29,6 +29,7 @@ BEAM_SIZE = 5
 _DEFAULTS = {
     "RECORD_KEYS": ["shift_r"],
     "language": "Not selected",
+    "dictionary": [],
 }
 
 _VALID_LANGUAGES = {"Not selected", "en", "ru", "uk"}
@@ -49,6 +50,8 @@ def init_config():
         _save_config()
     if _config.get("language") not in _VALID_LANGUAGES:
         _config["language"] = "Not selected"
+    if not isinstance(_config.get("dictionary"), list):
+        _config["dictionary"] = []
 
 def get_config_value(key):
     """Get a config value from the in-memory cache."""
