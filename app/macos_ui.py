@@ -543,6 +543,14 @@ def create_status_bar():
 
     menu = NSMenu.alloc().init()
 
+    # Shortcut display (non-interactive)
+    current_key = get_config_value("RECORD_KEYS")[0]
+    _shortcut_display_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        f"Shortcut: {current_key}", None, ""
+    )
+    _shortcut_display_item.setEnabled_(False)
+    menu.addItem_(_shortcut_display_item)
+
     # Language display (non-interactive)
     current_lang = get_config_value("language")
     lang_display = _LANGUAGE_DISPLAY.get(current_lang, "Not selected")
@@ -552,22 +560,6 @@ def create_status_bar():
     _language_display_item.setEnabled_(False)
     menu.addItem_(_language_display_item)
 
-    # Change Language
-    _language_menu_controller = LanguageWindowController.alloc().init()
-    change_lang_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-        "Change Language", "openLanguageWindow:", ""
-    )
-    change_lang_item.setTarget_(_language_menu_controller)
-    menu.addItem_(change_lang_item)
-
-    # Shortcut display (non-interactive)
-    current_key = get_config_value("RECORD_KEYS")[0]
-    _shortcut_display_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-        f"Shortcut: {current_key}", None, ""
-    )
-    _shortcut_display_item.setEnabled_(False)
-    menu.addItem_(_shortcut_display_item)
-
     # Change Shortcut
     _menu_controller = ShortcutWindowController.alloc().init()
     change_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -576,7 +568,15 @@ def create_status_bar():
     change_item.setTarget_(_menu_controller)
     menu.addItem_(change_item)
 
-    # Dictionary
+    # Change Language
+    _language_menu_controller = LanguageWindowController.alloc().init()
+    change_lang_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "Change Language", "openLanguageWindow:", ""
+    )
+    change_lang_item.setTarget_(_language_menu_controller)
+    menu.addItem_(change_lang_item)
+
+    # Change Dictionary
     _dictionary_menu_controller = DictionaryWindowController.alloc().init()
     dict_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
         "Change Dictionary", "openDictionaryWindow:", ""
