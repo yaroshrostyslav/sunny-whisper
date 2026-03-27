@@ -30,6 +30,8 @@ def start_recording():
     stream = sd.InputStream(samplerate=FS, channels=1, callback=callback_recording_stream)
     stream.start()
     log("Recording...")
+    from macos_ui import set_status_icon
+    set_status_icon("recording")
 
 def stop_recording():
     """Stop audio recording and process the captured audio."""

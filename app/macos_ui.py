@@ -31,6 +31,30 @@ _menu_controller = None
 _language_menu_controller = None
 _shortcut_window_controller = None
 _language_window_controller = None
+_status_button = None
+
+_ICON_STATES = {
+    "idle":         ("icon-menu-bar.png", (18, 18)),
+    "recording":    ("icon-recording.png", (23, 23)),
+    "transcribing": ("icon-loader.png", (22, 22)),
+}
+
+def set_status_icon(state):
+    """Switch status bar icon. Safe to call from any thread."""
+    AppHelper.callAfter(_set_status_icon_main, state)
+
+def _set_status_icon_main(state):
+    if _status_button is None:
+        return
+    filename, size = _ICON_STATES.get(state, _ICON_STATES["idle"])
+    base_dir = get_base_dir()
+    if getattr(sys, "frozen", False):
+        icon_path = os.path.join(base_dir, filename)
+    else:
+        icon_path = os.path.join(base_dir, "..", "icons", filename)
+    icon = NSImage.alloc().initByReferencingFile_(icon_path)
+    icon.setSize_(size)
+    _status_button.setImage_(icon)
 
 class KeyCaptureField(NSTextField):
     """NSTextField subclass that displays a captured key name (read-only)."""
@@ -288,11 +312,13 @@ def setup_app():
 
 def create_status_bar():
     """Create menu bar icon in macOS status bar."""
-    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller
+    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button
 
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
     status_item = status_bar.statusItemWithLength_(NSVariableStatusItemLength)
+
+    _status_button = status_item.button()
 
     if getattr(sys, "frozen", False):
         icon_path = os.path.join(base_dir, "icon-menu-bar.png")
@@ -300,7 +326,7 @@ def create_status_bar():
         icon_path = os.path.join(base_dir, "..", "icons", "icon-menu-bar.png")
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_((18, 18))
-    status_item.button().setImage_(icon)
+    _status_button.setImage_(icon)
 
     menu = NSMenu.alloc().init()
 

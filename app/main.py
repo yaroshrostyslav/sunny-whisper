@@ -7,18 +7,20 @@ from config import init_config
 from audio_recorder import on_press, on_release, cleanup_recording
 from transcriber import load_model, transcribe_audio, cleanup_model
 from clipboard_handler import paste_text
-from macos_ui import create_status_bar, run_event_loop, setup_app, cleanup
+from macos_ui import create_status_bar, run_event_loop, setup_app, cleanup, set_status_icon
 
 def process_audio(audio):
     """Process recorded audio through transcription and clipboard."""
     log("Processing audio...")
     full_text = transcribe_audio(audio)
     paste_text(full_text)
+    set_status_icon("idle")
 
 def on_release_wrapper(key):
     """Wrapper for on_release that handles audio processing."""
     audio = on_release(key)
     if audio is not None:
+        set_status_icon("transcribing")
         threading.Thread(target=process_audio, args=(audio,), daemon=True).start()
 
 def main():
