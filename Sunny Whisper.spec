@@ -8,7 +8,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('app/model', 'model'),
-        ('icons/icon-menu-bar.png', '.'),
+        ('icons', '.'),
         # Silero VAD ONNX model required by faster-whisper when vad_filter=True
         ('venv/lib/python3.11/site-packages/faster_whisper/assets/silero_vad_v6.onnx', 'faster_whisper/assets'),
     ],
