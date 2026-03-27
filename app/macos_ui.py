@@ -9,8 +9,9 @@ from AppKit import (
     NSObject, NSMenu, NSMenuItem, NSApplicationActivationPolicyAccessory,
     NSTextField, NSButton, NSWindow, NSPopUpButton,
     NSWindowStyleMaskTitled, NSWindowStyleMaskClosable,
-    NSBackingStoreBuffered,
+    NSBackingStoreBuffered, NSAffineTransform, NSCompositingOperationSourceOver,
 )
+from Foundation import NSTimer
 from PyObjCTools import AppHelper
 from config import get_config_value
 from utils import log, get_base_dir
@@ -34,10 +35,63 @@ _language_window_controller = None
 _status_button = None
 
 _ICON_STATES = {
-    "idle":         ("icon-menu-bar.png", (18, 18)),
-    "recording":    ("icon-recording.png", (23, 23)),
-    "transcribing": ("icon-loader.png", (22, 22)),
+    "idle": ("icon-menu-bar.png", (18, 18)),
+    "recording": ("icon-recording.png", (23, 23)),
 }
+_LOADER_SIZE = (22, 22)
+_LOADER_STEP = 4  # degrees per tick
+_LOADER_INTERVAL = 0.016  # seconds per tick (~60fps, full rotation in ~1.5s)
+
+_loader_base_image = None
+_loader_angle = 0.0
+_loader_timer = None
+
+class _LoaderAnimator(NSObject):
+    def tick_(self, timer):
+        global _loader_angle
+        if _status_button is None or _loader_base_image is None:
+            return
+        _loader_angle = (_loader_angle - _LOADER_STEP) % 360
+        _status_button.setImage_(_rotated_image(_loader_base_image, _loader_angle))
+
+_loader_animator = _LoaderAnimator.alloc().init()
+
+def _rotated_image(source, degrees):
+    """Return a new NSImage that is source rotated by degrees."""
+    w, h = _LOADER_SIZE
+    rotated = NSImage.alloc().initWithSize_((w, h))
+    rotated.lockFocus()
+    t = NSAffineTransform.transform()
+    t.translateXBy_yBy_(w / 2, h / 2)
+    t.rotateByDegrees_(degrees)
+    t.translateXBy_yBy_(-w / 2, -h / 2)
+    t.concat()
+    source.drawAtPoint_fromRect_operation_fraction_(
+        (0, 0), ((0, 0), (0, 0)), NSCompositingOperationSourceOver, 1.0
+    )
+    rotated.unlockFocus()
+    return rotated
+
+def _start_loader_animation():
+    global _loader_base_image, _loader_angle, _loader_timer
+    base_dir = get_base_dir()
+    if getattr(sys, "frozen", False):
+        icon_path = os.path.join(base_dir, "icon-loader.png")
+    else:
+        icon_path = os.path.join(base_dir, "..", "icons", "icon-loader.png")
+    _loader_base_image = NSImage.alloc().initByReferencingFile_(icon_path)
+    _loader_base_image.setSize_(_LOADER_SIZE)
+    _loader_angle = 0.0
+    _loader_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+        _LOADER_INTERVAL, _loader_animator, "tick:", None, True
+    )
+
+def _stop_loader_animation():
+    global _loader_timer, _loader_base_image
+    if _loader_timer is not None:
+        _loader_timer.invalidate()
+        _loader_timer = None
+    _loader_base_image = None
 
 def set_status_icon(state):
     """Switch status bar icon. Safe to call from any thread."""
@@ -45,6 +99,10 @@ def set_status_icon(state):
 
 def _set_status_icon_main(state):
     if _status_button is None:
+        return
+    _stop_loader_animation()
+    if state == "transcribing":
+        _start_loader_animation()
         return
     filename, size = _ICON_STATES.get(state, _ICON_STATES["idle"])
     base_dir = get_base_dir()
@@ -176,7 +234,6 @@ def _clear_window_controller():
     global _shortcut_window_controller
     _shortcut_window_controller = None
 
-
 class LanguageWindowController(NSObject):
     """Manages the Change Language modal window."""
 
@@ -263,17 +320,14 @@ class LanguageWindowController(NSObject):
         listener_manager.clear_capture_callback()
         AppHelper.callAfter(_clear_language_window_controller)
 
-
 def _clear_language_window_controller():
     global _language_window_controller
     _language_window_controller = None
-
 
 def _update_language_display(lang_value):
     if _language_display_item:
         display = _LANGUAGE_DISPLAY.get(lang_value, "Not selected")
         _language_display_item.setTitle_(f"Language: {display}")
-
 
 def _update_shortcut_display(key):
     if _shortcut_display_item:
