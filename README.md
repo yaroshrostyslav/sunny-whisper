@@ -7,6 +7,8 @@ A macOS menu bar app for real-time speech-to-text transcription using OpenAI's W
 - **Real-time Speech-to-Text**: Uses faster-whisper (small model) for fast on-device transcription
 - **Configurable Shortcut**: Change the recording key via the menu bar
 - **Language Selection**: Choose recognition language or use auto-detection
+- **Custom Dictionary**: Add words or style examples to improve recognition accuracy
+- **Animated Status Icon**: Visual feedback for idle / recording / transcribing states
 - **Automatic Paste**: Transcribed text is pasted at cursor position (layout-independent)
 - **Menu Bar Operation**: Runs silently as a menu bar app with no Dock icon
 - **Local Processing**: All audio processing happens on-device, no data sent to servers
@@ -17,8 +19,8 @@ A macOS menu bar app for real-time speech-to-text transcription using OpenAI's W
 
 - macOS
 - Microphone access
-- Accessibility access (for keyboard shortcut detection)
-- Input Monitoring access (for global key listening)
+- Accessibility access (required for pasting text)
+- Input Monitoring access (required for global key listening)
 - Internet connection (for initial model download only)
 
 ## Installation
@@ -70,29 +72,42 @@ pyinstaller 'Sunny Whisper.spec' -y
 3. **Stop Recording**: Release the key
 4. **Automatic Transcription**: The transcribed text is pasted at your cursor position
 
+### Status Bar Icon States
+
+| Icon | State |
+|---|---|
+| Default icon | Idle / ready |
+| Microphone icon | Recording in progress |
+| Animated spinner | Transcribing audio |
+
 ### Menu Bar
 
 Click the menu bar icon to access settings:
 
 | Item | Description |
 |---|---|
-| Language: \<lang\> | Currently selected recognition language |
-| Change Language | Open language selection window |
 | Shortcut: \<key\> | Currently configured recording key |
+| Language: \<lang\> | Currently selected recognition language |
 | Change Shortcut | Open shortcut change window |
+| Change Language | Open language selection window |
+| Change Dictionary | Open custom dictionary window |
 | Quit | Exit the application |
 
 ## Configuration
 
 User settings are stored in `~/Library/Caches/Sunny Whisper/user_config.json` and persist across launches.
 
-### Language
-
-Select a language in the menu bar to improve accuracy and speed. Available options: Not selected (auto-detect), English, Russian, Ukrainian.
-
 ### Recording Shortcut
 
 Click "Change Shortcut" in the menu bar and press any key to reassign the recording trigger.
+
+### Language
+
+Select a language to improve accuracy and speed. Available options: Not selected (auto-detect), English, Russian, Ukrainian.
+
+### Custom Dictionary
+
+Click "Change Dictionary" to open the dictionary editor. Add words that should be recognized accurately, or add a style example sentence to guide the output format (e.g. lowercase, punctuation style). Words are joined into `initial_prompt` passed to the Whisper model.
 
 ### Model Selection
 
@@ -107,7 +122,7 @@ HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-large-v3"
 1. **Model Loading**: On first run, the Whisper model is downloaded from Hugging Face and cached in `app/model/`
 2. **Audio Capture**: Holding the shortcut key captures audio at 44.1kHz
 3. **Processing**: On key release, audio is resampled to 16kHz
-4. **Transcription**: Whisper transcribes the audio (VAD filter skips silent parts)
+4. **Transcription**: Whisper transcribes the audio (VAD filter skips silent parts; dictionary words passed as `initial_prompt`)
 5. **Paste**: Text is copied to clipboard and pasted via Cmd+V (Quartz CGEvent, layout-independent)
 
 ## Logging
@@ -119,11 +134,15 @@ Debug logs are written to:
 
 ## Troubleshooting
 
-### App doesn't respond to keyboard shortcuts
+### Text is not pasted after transcription
 
 1. Open **System Settings → Privacy & Security → Accessibility** — add the app
-2. Open **System Settings → Privacy & Security → Input Monitoring** — add the app
-3. Restart the application
+2. Restart the application
+
+### App doesn't respond to keyboard shortcuts
+
+1. Open **System Settings → Privacy & Security → Input Monitoring** — add the app
+2. Restart the application
 
 ### Recording doesn't work
 
@@ -132,8 +151,8 @@ Debug logs are written to:
 
 ### Transcription is slow
 
+- Selecting a specific language (instead of auto-detect) speeds up transcription
 - The app uses the `faster-whisper-small` model by default, which is already optimized
-- Selecting a specific language (instead of auto-detect) can speed up transcription
 - Close other memory-intensive applications
 
 ## Dependencies
