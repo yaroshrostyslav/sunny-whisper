@@ -371,7 +371,7 @@ class DictionaryWindowController(NSObject):
 
         # Instruction label
         label = NSTextField.alloc().initWithFrame_(((20, 375), (340, 32)))
-        label.setStringValue_("Add or remove words to improve speech recognition accuracy")
+        label.setStringValue_("Add words to improve recognition accuracy or provide a style example")
         label.setBezeled_(False)
         label.setDrawsBackground_(False)
         label.setEditable_(False)
