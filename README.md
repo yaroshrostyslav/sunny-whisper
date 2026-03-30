@@ -149,6 +149,13 @@ Debug logs are written to:
 1. Open **System Settings → Privacy & Security → Microphone** — add the app
 2. Restart the application
 
+### "Cannot open application" on macOS
+
+If macOS blocks the app with "Cannot open", remove the quarantine attribute:
+```bash
+xattr -cr "/Applications/Sunny Whisper.app"
+```
+
 ### Transcription is slow
 
 - Selecting a specific language (instead of auto-detect) speeds up transcription
