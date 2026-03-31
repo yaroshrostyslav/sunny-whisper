@@ -61,11 +61,19 @@ python3.11 main.py
 
 ### Building the Application
 
+Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
+
+```bash
+bash build.sh
+```
+
+Or manually:
+
 ```bash
 pyinstaller 'Sunny Whisper.spec' -y
 ```
 
-> **Note**: Run the script from source at least once before building to download the Whisper model into the `app/model/` directory.
+> **Note**: The model must be present in `app/model/` before building. `build.sh` handles this automatically via `python3.11 app/transcriber.py`.
 
 ## Usage
 
