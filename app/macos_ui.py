@@ -35,6 +35,8 @@ _shortcut_window_controller = None
 _language_window_controller = None
 _dictionary_window_controller = None
 _dictionary_menu_controller = None
+_statistics_window_controller = None
+_statistics_menu_controller = None
 _status_button = None
 
 _ICON_STATES = {
@@ -492,6 +494,74 @@ def _clear_dictionary_window_controller():
     _dictionary_window_controller = None
 
 
+class StatisticsWindowController(NSObject):
+    """Manages the Statistics window."""
+
+    def openStatisticsWindow_(self, sender):
+        global _statistics_window_controller
+        if _statistics_window_controller is not None:
+            _statistics_window_controller._window.makeKeyAndOrderFront_(None)
+            return
+        ctrl = StatisticsWindowController.alloc().init()
+        _statistics_window_controller = ctrl
+        ctrl._show()
+
+    def _show(self):
+        import listener_manager
+        from stats import get_today, get_this_week, get_all_time
+
+        listener_manager.set_capture_callback(lambda key: None)
+
+        self._window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            ((0, 0), (380, 160)),
+            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable,
+            NSBackingStoreBuffered,
+            False,
+        )
+        self._window.setTitle_("Statistics")
+        self._window.center()
+        self._window.setDelegate_(self)
+        self._window.setReleasedWhenClosed_(False)
+
+        content = self._window.contentView()
+
+        def _label(frame, text):
+            lbl = NSTextField.alloc().initWithFrame_(frame)
+            lbl.setStringValue_(text)
+            lbl.setBezeled_(False)
+            lbl.setDrawsBackground_(False)
+            lbl.setEditable_(False)
+            lbl.setSelectable_(False)
+            return lbl
+
+        content.addSubview_(_label(((20, 115), (340, 24)), f"Today: {get_today()} words"))
+        content.addSubview_(_label(((20, 82), (340, 24)), f"This week: {get_this_week()} words"))
+        content.addSubview_(_label(((20, 49), (340, 24)), f"All time: {get_all_time()} words"))
+
+        close_btn = NSButton.alloc().initWithFrame_(((280, 15), (80, 32)))
+        close_btn.setTitle_("Close")
+        close_btn.setTarget_(self)
+        close_btn.setAction_("close:")
+        content.addSubview_(close_btn)
+
+        self._window.setDefaultButtonCell_(close_btn.cell())
+        self._window.makeKeyAndOrderFront_(None)
+        NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+
+    def close_(self, sender):
+        self._window.close()
+
+    def windowWillClose_(self, notification):
+        import listener_manager
+        listener_manager.clear_capture_callback()
+        AppHelper.callAfter(_clear_statistics_window_controller)
+
+
+def _clear_statistics_window_controller():
+    global _statistics_window_controller
+    _statistics_window_controller = None
+
+
 class AppDelegate(NSObject):
     """Application delegate for macOS app lifecycle management."""
 
@@ -525,7 +595,7 @@ def setup_app():
 
 def create_status_bar():
     """Create menu bar icon in macOS status bar."""
-    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller
+    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller, _statistics_menu_controller
 
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
@@ -583,6 +653,14 @@ def create_status_bar():
     )
     dict_item.setTarget_(_dictionary_menu_controller)
     menu.addItem_(dict_item)
+
+    # Statistics
+    _statistics_menu_controller = StatisticsWindowController.alloc().init()
+    stats_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "Statistics", "openStatisticsWindow:", ""
+    )
+    stats_item.setTarget_(_statistics_menu_controller)
+    menu.addItem_(stats_item)
 
     # Quit
     quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", "terminate:", "q")

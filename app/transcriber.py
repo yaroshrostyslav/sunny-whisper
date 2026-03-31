@@ -76,6 +76,10 @@ def transcribe_audio(audio):
             initial_prompt=initial_prompt,
         )
         full_text = "".join(segment.text for segment in segments)
+        word_count = len(full_text.split())
+        if word_count > 0:
+            from stats import record_words
+            record_words(word_count)
     except Exception as e:
         log(f"Transcription error: {e}")
         return ""
