@@ -8,6 +8,8 @@ A macOS menu bar app for real-time speech-to-text transcription using OpenAI's W
 - **Configurable Shortcut**: Change the recording key via the menu bar
 - **Language Selection**: Choose recognition language or use auto-detection
 - **Custom Dictionary**: Add words or style examples to improve recognition accuracy
+- **Word Count Statistics**: Track transcribed words — today, this week, all time
+- **Auto Device Switching**: Automatically detects default input device changes without restart
 - **Animated Status Icon**: Visual feedback for idle / recording / transcribing states
 - **Automatic Paste**: Transcribed text is pasted at cursor position (layout-independent)
 - **Menu Bar Operation**: Runs silently as a menu bar app with no Dock icon
@@ -91,6 +93,7 @@ Click the menu bar icon to access settings:
 | Change Shortcut | Open shortcut change window |
 | Change Language | Open language selection window |
 | Change Dictionary | Open custom dictionary window |
+| Statistics | View word count statistics |
 | Quit | Exit the application |
 
 ## Configuration
