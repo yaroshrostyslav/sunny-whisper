@@ -27,7 +27,13 @@ def start_recording():
         return
     recording = []
     is_recording = True
-    stream = sd.InputStream(samplerate=FS, channels=1, callback=callback_recording_stream)
+    try:
+        stream = sd.InputStream(samplerate=FS, channels=1, callback=callback_recording_stream)
+    except Exception:
+        log("Audio device error, reinitializing PortAudio...")
+        sd._terminate()
+        sd._initialize()
+        stream = sd.InputStream(samplerate=FS, channels=1, callback=callback_recording_stream)
     stream.start()
     log("Recording...")
     from macos_ui import set_status_icon
