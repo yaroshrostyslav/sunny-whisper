@@ -16,6 +16,23 @@ from utils import log, get_base_dir
 # Global variable
 model = None
 
+def download_model():
+    """Download Whisper model from Hugging Face and copy it to app/model/."""
+    base_dir = get_base_dir()
+    model_path = os.path.join(base_dir, "model")
+
+    log(f"Downloading model snapshot from {HF_MODEL_REPO_ID}...")
+    model_cache_dir = snapshot_download(repo_id=HF_MODEL_REPO_ID)
+    log(f"Model cached at: {model_cache_dir}")
+
+    if Path(model_path).exists():
+        log(f"Removing existing model at {model_path}")
+        subprocess.run(["rm", "-rf", model_path], check=True)
+    log(f"Copying model to {model_path}...")
+    subprocess.run(["cp", "-Lr", model_cache_dir, model_path], check=True)
+    log("Model download completed.")
+
+
 def load_model():
     """Load Whisper model from cache or download if needed."""
     global model
@@ -27,17 +44,8 @@ def load_model():
         log(f"Running as frozen app. Base dir: {base_dir}, model path: {model_path}")
     else:
         log(f"Running as script. Base dir: {base_dir}")
-        log("Downloading model snapshot...")
-        model_cache_dir = snapshot_download(repo_id=HF_MODEL_REPO_ID)
-        log(f"Model cached at: {model_cache_dir}")
-
+        download_model()
         model_path = os.path.join(base_dir, "model")
-        if Path(model_path).exists():
-            log(f"Removing existing model at {model_path}")
-            subprocess.run(["rm", "-rf", model_path], check=True)
-        log(f"Copying model from cache to {model_path} ...")
-        subprocess.run(["cp", "-Lr", model_cache_dir, model_path], check=True)
-        log("Model copy completed.")
 
     process = psutil.Process(os.getpid())
     log(f"Memory usage before model load: {process.memory_info().rss / 1024 ** 2:.2f} MB")
@@ -105,3 +113,6 @@ def cleanup_model():
             log(f"Model release error: {e}")
             return False
     return True
+
+if __name__ == "__main__":
+    download_model()
