@@ -11,6 +11,7 @@ from AppKit import (
     NSWindowStyleMaskTitled, NSWindowStyleMaskClosable,
     NSBackingStoreBuffered, NSAffineTransform, NSCompositingOperationSourceOver,
     NSTableView, NSTableColumn, NSScrollView, NSBezelBorder,
+    NSImageView, NSWorkspace, NSTextAlignmentCenter,
 )
 from Foundation import NSTimer
 from PyObjCTools import AppHelper
@@ -37,6 +38,8 @@ _dictionary_window_controller = None
 _dictionary_menu_controller = None
 _statistics_window_controller = None
 _statistics_menu_controller = None
+_about_window_controller = None
+_about_menu_controller = None
 _status_button = None
 
 _ICON_STATES = {
@@ -142,6 +145,7 @@ class ShortcutWindowController(NSObject):
     def openShortcutWindow_(self, sender):
         global _shortcut_window_controller
         if _shortcut_window_controller is not None:
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
             _shortcut_window_controller._window.makeKeyAndOrderFront_(None)
             return
         ctrl = ShortcutWindowController.alloc().init()
@@ -245,6 +249,7 @@ class LanguageWindowController(NSObject):
     def openLanguageWindow_(self, sender):
         global _language_window_controller
         if _language_window_controller is not None:
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
             _language_window_controller._window.makeKeyAndOrderFront_(None)
             return
         ctrl = LanguageWindowController.alloc().init()
@@ -345,6 +350,7 @@ class DictionaryWindowController(NSObject):
     def openDictionaryWindow_(self, sender):
         global _dictionary_window_controller
         if _dictionary_window_controller is not None:
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
             _dictionary_window_controller._window.makeKeyAndOrderFront_(None)
             return
         ctrl = DictionaryWindowController.alloc().init()
@@ -500,6 +506,7 @@ class StatisticsWindowController(NSObject):
     def openStatisticsWindow_(self, sender):
         global _statistics_window_controller
         if _statistics_window_controller is not None:
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
             _statistics_window_controller._window.makeKeyAndOrderFront_(None)
             return
         ctrl = StatisticsWindowController.alloc().init()
@@ -562,6 +569,85 @@ def _clear_statistics_window_controller():
     _statistics_window_controller = None
 
 
+class AboutWindowController(NSObject):
+    """Manages the About window."""
+
+    def openAboutWindow_(self, sender):
+        global _about_window_controller
+        if _about_window_controller is not None:
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+            _about_window_controller._window.makeKeyAndOrderFront_(None)
+            return
+        ctrl = AboutWindowController.alloc().init()
+        _about_window_controller = ctrl
+        ctrl._show()
+
+    def _show(self):
+        w, h = 300, 260
+        self._window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            ((0, 0), (w, h)),
+            NSWindowStyleMaskTitled | NSWindowStyleMaskClosable,
+            NSBackingStoreBuffered,
+            False,
+        )
+        self._window.setTitle_("About")
+        self._window.center()
+        self._window.setDelegate_(self)
+        self._window.setReleasedWhenClosed_(False)
+
+        content = self._window.contentView()
+
+        # Logo
+        base_dir = get_base_dir()
+        if getattr(sys, "frozen", False):
+            icon_path = os.path.join(base_dir, "icon.png")
+        else:
+            icon_path = os.path.join(base_dir, "..", "icons", "icon.png")
+        icon = NSImage.alloc().initByReferencingFile_(icon_path)
+        icon.setSize_((80, 80))
+        icon_view = NSImageView.alloc().initWithFrame_(((w // 2 - 40, 160), (80, 80)))
+        icon_view.setImage_(icon)
+        content.addSubview_(icon_view)
+
+        def _centered_label(y, text, size=13):
+            lbl = NSTextField.alloc().initWithFrame_(((0, y), (w, 24)))
+            lbl.setStringValue_(text)
+            lbl.setBezeled_(False)
+            lbl.setDrawsBackground_(False)
+            lbl.setEditable_(False)
+            lbl.setSelectable_(False)
+            lbl.setAlignment_(NSTextAlignmentCenter)
+            lbl.setFont_(lbl.font().fontWithSize_(size))
+            return lbl
+
+        from config import APP_VERSION
+        content.addSubview_(_centered_label(125, "Sunny Whisper", size=16))
+        content.addSubview_(_centered_label(98, f"Version {APP_VERSION}"))
+
+        # GitHub button
+        github_btn = NSButton.alloc().initWithFrame_(((w // 2 - 55, 25), (110, 30)))
+        github_btn.setTitle_("GitHub")
+        github_btn.setTarget_(self)
+        github_btn.setAction_("openGithub:")
+        content.addSubview_(github_btn)
+
+        self._window.makeKeyAndOrderFront_(None)
+        NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+
+    def openGithub_(self, sender):
+        from Foundation import NSURL
+        url = NSURL.URLWithString_("https://github.com/yaroshrostyslav/sunny-whisper")
+        NSWorkspace.sharedWorkspace().openURL_(url)
+
+    def windowWillClose_(self, notification):
+        AppHelper.callAfter(_clear_about_window_controller)
+
+
+def _clear_about_window_controller():
+    global _about_window_controller
+    _about_window_controller = None
+
+
 class AppDelegate(NSObject):
     """Application delegate for macOS app lifecycle management."""
 
@@ -595,7 +681,7 @@ def setup_app():
 
 def create_status_bar():
     """Create menu bar icon in macOS status bar."""
-    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller, _statistics_menu_controller
+    global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller, _statistics_menu_controller, _about_menu_controller
 
     base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
@@ -661,6 +747,14 @@ def create_status_bar():
     )
     stats_item.setTarget_(_statistics_menu_controller)
     menu.addItem_(stats_item)
+
+    # About
+    _about_menu_controller = AboutWindowController.alloc().init()
+    about_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "About", "openAboutWindow:", ""
+    )
+    about_item.setTarget_(_about_menu_controller)
+    menu.addItem_(about_item)
 
     # Quit
     quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", "terminate:", "q")
