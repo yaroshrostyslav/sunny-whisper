@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-APP_VERSION = "1.0.0"  # ← меняешь только здесь
+APP_VERSION = "1.0.0"
 
 a = Analysis(
     ['app/main.py'],
