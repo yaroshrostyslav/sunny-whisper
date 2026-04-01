@@ -24,7 +24,7 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 
 ### Building the macOS Application
 
-Use the build script — it sets up the environment, downloads the model, builds the app, resets TCC permissions, and installs the app to `/Applications`:
+Use the build script — it sets up the environment, downloads the model, builds the app, resets TCC permissions, and installs the app to `/Applications`
 
 ```bash
 bash build.sh
@@ -67,7 +67,7 @@ python3.11 main.py
 | Icon | State |
 |---|---|
 | Default icon | Idle / ready |
-| Microphone icon | Recording in progress |
+| Three dots icon | Recording in progress |
 | Animated spinner | Transcribing audio |
 
 ### Menu Bar
