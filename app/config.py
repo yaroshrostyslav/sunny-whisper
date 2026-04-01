@@ -8,6 +8,7 @@ from pathlib import Path
 # Application Info
 APP_NAME = "Sunny Whisper"
 APP_VERSION = "1.0.0"
+GIT_COMMIT = "placeholder"
 
 # Model Configuration
 HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"

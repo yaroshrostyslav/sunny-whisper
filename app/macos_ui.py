@@ -620,9 +620,10 @@ class AboutWindowController(NSObject):
             lbl.setFont_(lbl.font().fontWithSize_(size))
             return lbl
 
-        from config import APP_VERSION
+        from config import APP_VERSION, GIT_COMMIT
         content.addSubview_(_centered_label(125, "Sunny Whisper", size=16))
-        content.addSubview_(_centered_label(98, f"Version {APP_VERSION}"))
+        version_str = f"Version {APP_VERSION} ({GIT_COMMIT})" if GIT_COMMIT else f"Version {APP_VERSION}"
+        content.addSubview_(_centered_label(98, version_str))
 
         # GitHub button
         github_btn = NSButton.alloc().initWithFrame_(((w // 2 - 55, 25), (110, 30)))
