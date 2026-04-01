@@ -22,6 +22,14 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 
 ## Installation
 
+### Building the macOS Application
+
+Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
+
+```bash
+bash build.sh
+```
+
 ### From Source
 
 1. Clone the repository:
@@ -45,14 +53,6 @@ pip install -r requirements.txt
 ```bash
 cd app
 python3.11 main.py
-```
-
-### Building the macOS Application
-
-Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
-
-```bash
-bash build.sh
 ```
 
 ## Usage
