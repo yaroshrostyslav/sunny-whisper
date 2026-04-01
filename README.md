@@ -1,4 +1,4 @@
-# <img src="icons/icon-full-size.png" width="32" height="32" style="vertical-align: -2px"> Sunny Whisper
+# <img src="icons/icon-full-size.png" width="32" height="32" style="vertical-align: -3px"> Sunny Whisper
 
 A macOS menu bar app for real-time speech-to-text transcription powered by OpenAI's Whisper model. Hold the right Shift key to start recording, release to transcribe — the text is instantly pasted at your cursor position.
 
