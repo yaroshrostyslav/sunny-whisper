@@ -28,5 +28,8 @@ echo "==> Resetting TCC permissions..."
 tccutil reset Accessibility com.rostyslavyarosh.sunny-whisper || true
 tccutil reset ListenEvent com.rostyslavyarosh.sunny-whisper || true
 
+echo "==> Cleaning build artifacts..."
+rm -rf build dist
+
 echo "==> Done. App installed at /Applications/Sunny Whisper.app"
 echo "    Note: grant Accessibility and Input Monitoring permissions on first launch."

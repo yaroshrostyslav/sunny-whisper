@@ -24,7 +24,7 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 
 ### Building the macOS Application
 
-Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
+Use the build script — it sets up the environment, downloads the model, builds the app, resets TCC permissions, and installs the app to `/Applications`:
 
 ```bash
 bash build.sh
