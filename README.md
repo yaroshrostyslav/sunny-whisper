@@ -22,6 +22,13 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 
 ## Installation
 
+### Prerequisites
+
+Install FFmpeg (required for audio processing):
+```bash
+brew install ffmpeg
+```
+
 ### Building the macOS Application
 
 Use the build script — it sets up the environment, downloads the model, builds the app, resets TCC permissions, and installs the app to `/Applications`
