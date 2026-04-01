@@ -14,20 +14,13 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 
 ## Requirements
 
-- macOS
+- MacOS
 - Microphone access
 - Accessibility access (required for pasting text)
 - Input Monitoring access (required for global key listening)
 - Internet connection (for initial model download only)
 
 ## Installation
-
-### Prerequisites
-
-Install FFmpeg (required for audio processing):
-```bash
-brew install ffmpeg
-```
 
 ### From Source
 
@@ -55,8 +48,6 @@ python3.11 main.py
 ```
 
 ### Building the macOS Application
-
-- macOS
 
 Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
 
@@ -103,7 +94,7 @@ Click "Change Shortcut" in the menu bar and press any key to reassign the record
 
 ### Language
 
-Select a language to improve accuracy and speed. Available options: Not selected (auto-detect), English, Russian, Ukrainian.
+Select a language to improve accuracy and speed. Available options: Not selected (auto-detect), English, Russian, Ukrainian. To add more languages, extend the `VALID_LANGUAGES` array in `app/config.py`.
 
 ### Custom Dictionary
 
