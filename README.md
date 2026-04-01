@@ -1,21 +1,16 @@
-# Sunny Whisper
+# <img src="icons/icon-full-size.png" width="32" height="32" style="vertical-align: -2px"> Sunny Whisper
 
-A macOS menu bar app for real-time speech-to-text transcription using OpenAI's Whisper model. Hold the right Shift key to record audio, release to transcribe — the text is automatically pasted at your cursor position.
+A macOS menu bar app for real-time speech-to-text transcription powered by OpenAI's Whisper model. Hold the right Shift key to start recording, release to transcribe — the text is instantly pasted at your cursor position.
+
+All audio processing happens entirely on-device, ensuring your voice data never leaves your Mac.
 
 ## Features
 
-- **Real-time Speech-to-Text**: Uses faster-whisper (small model) for fast on-device transcription
-- **Configurable Shortcut**: Change the recording key via the menu bar
-- **Language Selection**: Choose recognition language or use auto-detection
-- **Custom Dictionary**: Add words or style examples to improve recognition accuracy
-- **Word Count Statistics**: Track transcribed words — today, this week, all time
-- **Auto Device Switching**: Automatically detects default input device changes without restart
-- **Animated Status Icon**: Visual feedback for idle / recording / transcribing states
-- **Automatic Paste**: Transcribed text is pasted at cursor position (layout-independent)
-- **Menu Bar Operation**: Runs silently as a menu bar app with no Dock icon
-- **Local Processing**: All audio processing happens on-device, no data sent to servers
-- **VAD Filter**: Silences are skipped automatically for faster transcription
-- **Memory Efficient**: Uses int8 quantization
+- **Local, on-device transcription** — no data sent to servers
+- **Simple trigger** — hold right Shift to record, release to transcribe and paste
+- **Configurable shortcut, language, and custom dictionary**
+- **Word count statistics** — today, this week, all time
+- **Auto input device switching** — detects mic changes without restart
 
 ## Requirements
 
@@ -59,21 +54,15 @@ cd app
 python3.11 main.py
 ```
 
-### Building the Application
+### Building the macOS Application
+
+- macOS
 
 Use the build script — it sets up the environment, downloads the model, builds the app, and resets TCC permissions:
 
 ```bash
 bash build.sh
 ```
-
-Or manually:
-
-```bash
-pyinstaller 'Sunny Whisper.spec' -y
-```
-
-> **Note**: The model must be present in `app/model/` before building. `build.sh` handles this automatically via `python3.11 app/transcriber.py`.
 
 ## Usage
 
@@ -128,21 +117,6 @@ The default model is `SYSTRAN/faster-whisper-small`. To switch to a larger model
 HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-large-v3"
 ```
 
-## How It Works
-
-1. **Model Loading**: On first run, the Whisper model is downloaded from Hugging Face and cached in `app/model/`
-2. **Audio Capture**: Holding the shortcut key captures audio at 44.1kHz
-3. **Processing**: On key release, audio is resampled to 16kHz
-4. **Transcription**: Whisper transcribes the audio (VAD filter skips silent parts; dictionary words passed as `initial_prompt`)
-5. **Paste**: Text is copied to clipboard and pasted via Cmd+V (Quartz CGEvent, layout-independent)
-
-## Logging
-
-Debug logs are written to:
-```
-~/Library/Caches/Sunny Whisper/debug.log
-```
-
 ## Troubleshooting
 
 ### Text is not pasted after transcription
@@ -172,18 +146,6 @@ xattr -cr "/Applications/Sunny Whisper.app"
 - Selecting a specific language (instead of auto-detect) speeds up transcription
 - The app uses the `faster-whisper-small` model by default, which is already optimized
 - Close other memory-intensive applications
-
-## Dependencies
-
-- `faster-whisper` — Whisper model inference
-- `sounddevice` — microphone audio capture
-- `numpy`, `scipy` — audio data processing and resampling
-- `pynput` — global keyboard listener
-- `pyperclip` — clipboard operations
-- `psutil` — memory monitoring
-- `huggingface-hub` — model downloading
-- `pyinstaller` — application bundling
-- `PyObjC` / `AppKit` — macOS native UI and system integration
 
 ## License
 
