@@ -4,6 +4,8 @@ A macOS menu bar app for real-time speech-to-text transcription powered by OpenA
 
 All audio processing happens entirely on-device, ensuring your voice data never leaves your Mac.
 
+[![Download](https://img.shields.io/github/v/release/yaroshrostyslav/sunny-whisper?label=Download&style=for-the-badge&logo=apple)](https://github.com/yaroshrostyslav/sunny-whisper/releases/latest)
+
 ## Features
 
 - **Local, on-device transcription** — no data sent to servers
@@ -21,6 +23,13 @@ All audio processing happens entirely on-device, ensuring your voice data never 
 - Internet connection (for initial model download only)
 
 ## Installation
+
+### Prerequisites
+
+Install FFmpeg (required for audio processing):
+```bash
+brew install ffmpeg
+```
 
 ### Building the macOS Application
 

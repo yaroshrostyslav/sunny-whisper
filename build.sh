@@ -22,7 +22,7 @@ pyinstaller 'Sunny Whisper.spec' -y
 
 echo "==> Copying app to /Applications..."
 rm -rf "/Applications/Sunny Whisper.app"
-cp -r "dist/Sunny Whisper.app" "/Applications/Sunny Whisper.app"
+ditto "dist/Sunny Whisper.app" "/Applications/Sunny Whisper.app"
 
 echo "==> Resetting TCC permissions..."
 tccutil reset Accessibility com.rostyslavyarosh.sunny-whisper || true
