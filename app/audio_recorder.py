@@ -9,7 +9,7 @@ import sounddevice as sd
 from scipy.signal import resample_poly
 from math import gcd
 from config import FS, TARGET_SR, get_config_value
-from utils import log
+from config import log
 
 # Global variables
 recording = []
