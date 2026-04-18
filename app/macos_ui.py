@@ -678,6 +678,7 @@ def create_status_bar():
     icon_path = os.path.join(get_icons_dir(), "icon-menu-bar.png")
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_((18, 18))
+    icon.setTemplate_(True)
     _status_button.setImage_(icon)
 
     menu = NSMenu.alloc().init()
