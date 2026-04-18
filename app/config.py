@@ -9,6 +9,7 @@ from pathlib import Path
 APP_NAME = "Sunny Whisper"
 APP_VERSION = "1.0.0"
 GIT_COMMIT = "a8dcc71"
+GITHUB_URL = "https://github.com/yaroshrostyslav/sunny-whisper"
 
 # Model Configuration
 HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"

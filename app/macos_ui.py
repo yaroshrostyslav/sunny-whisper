@@ -15,7 +15,7 @@ from AppKit import (
 )
 from Foundation import NSTimer
 from PyObjCTools import AppHelper
-from config import get_config_value
+from config import get_config_value, GITHUB_URL
 from utils import log, get_base_dir
 
 # Language options: (display_name, config_value)
@@ -637,7 +637,7 @@ class AboutWindowController(NSObject):
 
     def openGithub_(self, sender):
         from Foundation import NSURL
-        url = NSURL.URLWithString_("https://github.com/yaroshrostyslav/sunny-whisper")
+        url = NSURL.URLWithString_(GITHUB_URL)
         NSWorkspace.sharedWorkspace().openURL_(url)
 
     def windowWillClose_(self, notification):
