@@ -10,8 +10,8 @@ from pathlib import Path
 
 # Application Info
 APP_NAME = "Sunny Whisper"
-APP_VERSION = "1.0.0"
-GIT_COMMIT = "a8dcc71"
+APP_VERSION = "1.1.0"
+GIT_COMMIT = "811ec7f"
 GITHUB_URL = "https://github.com/yaroshrostyslav/sunny-whisper"
 
 # Model Configuration
