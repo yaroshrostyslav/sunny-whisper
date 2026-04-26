@@ -76,6 +76,7 @@ def _rotated_image(source, degrees):
         (0, 0), ((0, 0), (0, 0)), NSCompositingOperationSourceOver, 1.0
     )
     rotated.unlockFocus()
+    rotated.setTemplate_(True)
     return rotated
 
 def _start_loader_animation():
@@ -83,6 +84,7 @@ def _start_loader_animation():
     icon_path = os.path.join(get_icons_dir(), "icon-loader.png")
     _loader_base_image = NSImage.alloc().initByReferencingFile_(icon_path)
     _loader_base_image.setSize_(_LOADER_SIZE)
+    _loader_base_image.setTemplate_(True)
     _loader_angle = 0.0
     _loader_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
         _LOADER_INTERVAL, _loader_animator, "tick:", None, True
@@ -110,6 +112,7 @@ def _set_status_icon_main(state):
     icon_path = os.path.join(get_icons_dir(), filename)
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_(size)
+    icon.setTemplate_(True)
     _status_button.setImage_(icon)
 
 class KeyCaptureField(NSTextField):
