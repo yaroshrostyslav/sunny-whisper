@@ -3,7 +3,7 @@ Global keyboard listener management for Sunny Whisper.
 """
 
 from pynput import keyboard
-from utils import log
+from config import log
 
 _listener = None
 _on_press = None

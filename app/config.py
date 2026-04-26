@@ -2,13 +2,17 @@
 Configuration constants for Sunny Whisper application.
 """
 
+import os
+import sys
 import json
+import time
 from pathlib import Path
 
 # Application Info
 APP_NAME = "Sunny Whisper"
-APP_VERSION = "1.0.0"
-GIT_COMMIT = "a8dcc71"
+APP_VERSION = "1.1.0"
+GIT_COMMIT = "811ec7f"
+GITHUB_URL = "https://github.com/yaroshrostyslav/sunny-whisper"
 
 # Model Configuration
 HF_MODEL_REPO_ID = "SYSTRAN/faster-whisper-small"
@@ -39,6 +43,15 @@ _VALID_LANGUAGES = {"Not selected", "en", "ru", "uk"}
 # In-memory cache
 _config: dict = {}
 
+LOG_FILE = str(CACHE_DIR / "debug.log")
+
+def log(msg):
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    full_msg = f"[{timestamp}] {msg}"
+    print(full_msg)
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(full_msg + "\n")
+
 def init_config():
     """Load user config from file, or create it with defaults if missing."""
     global _config
@@ -67,3 +80,16 @@ def update_config(key, value):
 def _save_config():
     with open(_CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(_config, f, indent=2, ensure_ascii=False)
+
+def get_base_dir() -> str:
+    if getattr(sys, "frozen", False):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def get_icons_dir() -> str:
+    base = get_base_dir()
+    return base if getattr(sys, "frozen", False) else os.path.join(base, "icons")
+
+def get_model_dir() -> str:
+    base = get_base_dir()
+    return os.path.join(base, "model") if getattr(sys, "frozen", False) else os.path.join(base, "app", "model")

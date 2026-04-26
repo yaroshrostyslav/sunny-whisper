@@ -4,7 +4,7 @@ Clipboard operations for Sunny Whisper.
 
 import pyperclip
 import Quartz
-from utils import log
+from config import log
 
 def paste_text(text):
     """Copy text to clipboard and paste it."""

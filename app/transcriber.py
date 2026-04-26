@@ -10,16 +10,14 @@ import psutil
 from pathlib import Path
 from huggingface_hub import snapshot_download
 from faster_whisper import WhisperModel
-from config import HF_MODEL_REPO_ID, BEAM_SIZE
-from utils import log, get_base_dir
+from config import HF_MODEL_REPO_ID, BEAM_SIZE, get_model_dir, log
 
 # Global variable
 model = None
 
 def download_model():
     """Download Whisper model from Hugging Face and copy it to app/model/."""
-    base_dir = get_base_dir()
-    model_path = os.path.join(base_dir, "model")
+    model_path = get_model_dir()
 
     log(f"Downloading model snapshot from {HF_MODEL_REPO_ID}...")
     model_cache_dir = snapshot_download(repo_id=HF_MODEL_REPO_ID)
@@ -32,20 +30,14 @@ def download_model():
     subprocess.run(["cp", "-Lr", model_cache_dir, model_path], check=True)
     log("Model download completed.")
 
-
 def load_model():
     """Load Whisper model from cache or download if needed."""
     global model
 
-    base_dir = get_base_dir()
-
-    if getattr(sys, "frozen", False):
-        model_path = os.path.join(base_dir, "model")
-        log(f"Running as frozen app. Base dir: {base_dir}, model path: {model_path}")
-    else:
-        log(f"Running as script. Base dir: {base_dir}")
+    if not getattr(sys, "frozen", False):
         download_model()
-        model_path = os.path.join(base_dir, "model")
+    model_path = get_model_dir()
+    log(f"Model path: {model_path}")
 
     process = psutil.Process(os.getpid())
     log(f"Memory usage before model load: {process.memory_info().rss / 1024 ** 2:.2f} MB")
@@ -96,7 +88,7 @@ def transcribe_audio(audio):
     log(f"Transcription completed in {elapsed:.2f} sec")
     log(f"Selected language: {language or 'auto'}")
     log(f"Detected language: {info.language} ({info.language_probability:.2f}), Selected language: {language or 'auto'}")
-    
+
     log(full_text[:500] + "..." if len(full_text) > 500 else full_text)
     return full_text
 

@@ -2,7 +2,7 @@ import multiprocessing
 import threading
 
 import listener_manager
-from utils import log
+from config import log
 from config import init_config
 from audio_recorder import on_press, on_release, cleanup_recording
 from transcriber import load_model, transcribe_audio, cleanup_model

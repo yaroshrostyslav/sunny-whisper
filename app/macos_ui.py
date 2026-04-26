@@ -3,7 +3,6 @@ macOS UI components for Sunny Whisper.
 """
 
 import os
-import sys
 from AppKit import (
     NSApplication, NSStatusBar, NSVariableStatusItemLength, NSImage,
     NSObject, NSMenu, NSMenuItem, NSApplicationActivationPolicyAccessory,
@@ -15,8 +14,7 @@ from AppKit import (
 )
 from Foundation import NSTimer
 from PyObjCTools import AppHelper
-from config import get_config_value
-from utils import log, get_base_dir
+from config import get_config_value, GITHUB_URL, get_icons_dir, log
 
 # Language options: (display_name, config_value)
 _LANGUAGE_OPTIONS = [
@@ -78,17 +76,15 @@ def _rotated_image(source, degrees):
         (0, 0), ((0, 0), (0, 0)), NSCompositingOperationSourceOver, 1.0
     )
     rotated.unlockFocus()
+    rotated.setTemplate_(True)
     return rotated
 
 def _start_loader_animation():
     global _loader_base_image, _loader_angle, _loader_timer
-    base_dir = get_base_dir()
-    if getattr(sys, "frozen", False):
-        icon_path = os.path.join(base_dir, "icon-loader.png")
-    else:
-        icon_path = os.path.join(base_dir, "..", "icons", "icon-loader.png")
+    icon_path = os.path.join(get_icons_dir(), "icon-loader.png")
     _loader_base_image = NSImage.alloc().initByReferencingFile_(icon_path)
     _loader_base_image.setSize_(_LOADER_SIZE)
+    _loader_base_image.setTemplate_(True)
     _loader_angle = 0.0
     _loader_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
         _LOADER_INTERVAL, _loader_animator, "tick:", None, True
@@ -113,13 +109,10 @@ def _set_status_icon_main(state):
         _start_loader_animation()
         return
     filename, size = _ICON_STATES.get(state, _ICON_STATES["idle"])
-    base_dir = get_base_dir()
-    if getattr(sys, "frozen", False):
-        icon_path = os.path.join(base_dir, filename)
-    else:
-        icon_path = os.path.join(base_dir, "..", "icons", filename)
+    icon_path = os.path.join(get_icons_dir(), filename)
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_(size)
+    icon.setTemplate_(True)
     _status_button.setImage_(icon)
 
 class KeyCaptureField(NSTextField):
@@ -598,11 +591,7 @@ class AboutWindowController(NSObject):
         content = self._window.contentView()
 
         # Logo
-        base_dir = get_base_dir()
-        if getattr(sys, "frozen", False):
-            icon_path = os.path.join(base_dir, "icon.png")
-        else:
-            icon_path = os.path.join(base_dir, "..", "icons", "icon.png")
+        icon_path = os.path.join(get_icons_dir(), "icon.png")
         icon = NSImage.alloc().initByReferencingFile_(icon_path)
         icon.setSize_((80, 80))
         icon_view = NSImageView.alloc().initWithFrame_(((w // 2 - 40, 160), (80, 80)))
@@ -637,7 +626,7 @@ class AboutWindowController(NSObject):
 
     def openGithub_(self, sender):
         from Foundation import NSURL
-        url = NSURL.URLWithString_("https://github.com/yaroshrostyslav/sunny-whisper")
+        url = NSURL.URLWithString_(GITHUB_URL)
         NSWorkspace.sharedWorkspace().openURL_(url)
 
     def windowWillClose_(self, notification):
@@ -684,18 +673,15 @@ def create_status_bar():
     """Create menu bar icon in macOS status bar."""
     global _shortcut_display_item, _language_display_item, _menu_controller, _language_menu_controller, _status_button, _dictionary_menu_controller, _statistics_menu_controller, _about_menu_controller
 
-    base_dir = get_base_dir()
     status_bar = NSStatusBar.systemStatusBar()
     status_item = status_bar.statusItemWithLength_(NSVariableStatusItemLength)
 
     _status_button = status_item.button()
 
-    if getattr(sys, "frozen", False):
-        icon_path = os.path.join(base_dir, "icon-menu-bar.png")
-    else:
-        icon_path = os.path.join(base_dir, "..", "icons", "icon-menu-bar.png")
+    icon_path = os.path.join(get_icons_dir(), "icon-menu-bar.png")
     icon = NSImage.alloc().initByReferencingFile_(icon_path)
     icon.setSize_((18, 18))
+    icon.setTemplate_(True)
     _status_button.setImage_(icon)
 
     menu = NSMenu.alloc().init()
